@@ -166,7 +166,7 @@ class SettingController extends Controller
             if (in_array($key, $donateKeys, true)) {
                 $decoded = json_decode($value, true);
                 if (is_array($decoded)) {
-                    $donate[$key] = $decoded;
+                    $donate[$key] = array_merge($donate[$key] ?? [], $decoded);
                 }
 
                 continue;
@@ -378,7 +378,7 @@ class SettingController extends Controller
             return config('widgets.event_schedule', ['enabled' => false, 'names' => [], 'custom' => []]);
         }
 
-        $names  = $saved['names'] ?? [];
+        $names = $saved['names'] ?? [];
         $custom = $saved['custom'] ?? [];
 
         if (empty($names) && empty($custom)) {

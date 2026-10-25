@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
-use App\Http\Controllers\API\RankingController;
 use App\Http\Controllers\API\PagesController;
+use App\Http\Controllers\API\RankingController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/ranking/player', [RankingController::class, 'player']);
 Route::get('/ranking/guild', [RankingController::class, 'guild']);
@@ -28,8 +28,8 @@ Route::middleware(['web', 'throttle:5,1'])->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::get('/profile', [AuthController::class, 'profile'])->middleware(config('global.register_confirm') ? 'verified' : []);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/login/verify', [AuthController::class, 'verify']);
-    Route::post('/login/verify/resend', [AuthController::class, 'resendVerify']);
+    Route::post('/login/verify', [AuthController::class, 'verify'])->middleware('throttle:10,1');
+    Route::post('/login/verify/resend', [AuthController::class, 'resendVerify'])->middleware('throttle:5,1');
 });

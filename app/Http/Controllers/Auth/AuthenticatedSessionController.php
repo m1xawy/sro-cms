@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -38,10 +39,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->authenticate();
 
-        $response = $this->sendVerify();
+        $user = Auth::user();
 
-        if ($response) {
-            return $response;
+        if ($this->requiresTwoFactor($user)) {
+            Auth::guard('web')->logout();
+            $request->session()->regenerate();
+
+            return $this->startTwoFactorChallenge($request, $user);
         }
 
         $request->session()->regenerate();
@@ -63,46 +67,67 @@ class AuthenticatedSessionController extends Controller
         return redirect('/');
     }
 
-    public function show()
+    public function show(Request $request)
     {
-        if (! session('login_verify_user')) {
+        if (! $this->hasPendingChallenge($request)) {
             return redirect()->route('login');
         }
 
         return view('auth.verify-login');
     }
 
-    protected function sendVerify(): ?RedirectResponse
+    private function requiresTwoFactor(User $user): bool
     {
-        $user = Auth::user();
+        return (bool) config("global.verify_jid_{$user->tbUser?->JID}");
+    }
 
-        if (! config("global.verify_jid_{$user->tbUser?->JID}")) {
-            return null;
-        }
-
+    private function startTwoFactorChallenge(Request $request, User $user): RedirectResponse
+    {
         $code = random_int(100000, 999999);
 
         Cache::put('verify_code_'.$user->email, $code, now()->addMinutes(30));
 
         $user->notify(new SendVerifyCode($code));
 
-        session([
+        $request->session()->put([
             'login_verify_user' => $user->id,
-            'login_verify_time' => now(),
+            'login_verify_time' => now()->timestamp,
         ]);
 
-        return redirect()->route('login.verify');
+        return redirect()->route('login.show');
     }
 
-    public function resendVerify(Request $request)
+    private function hasPendingChallenge(Request $request): bool
     {
+        $userId = $request->session()->get('login_verify_user');
+        $issuedAt = (int) $request->session()->get('login_verify_time');
 
-        $userId = session('login_verify_user');
-        if (! $userId) {
+        if (! $userId || ! $issuedAt) {
+            return false;
+        }
+
+        if (now()->timestamp - $issuedAt > 1800) {
+            $request->session()->forget(['login_verify_user', 'login_verify_time']);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public function resendVerify(Request $request): RedirectResponse
+    {
+        if (! $this->hasPendingChallenge($request)) {
             return redirect()->route('login');
         }
 
-        $user = User::findOrFail($userId);
+        $user = User::find($request->session()->get('login_verify_user'));
+
+        if (! $user) {
+            $request->session()->forget(['login_verify_user', 'login_verify_time']);
+
+            return redirect()->route('login');
+        }
 
         $token = Cache::get('verify_code_'.$user->email);
 
@@ -116,29 +141,52 @@ class AuthenticatedSessionController extends Controller
 
         $user->notify(new SendVerifyCode($code));
 
+        $request->session()->put('login_verify_time', now()->timestamp);
+
         return back()->with('status', 'Verification code sent again');
     }
 
-    public function verify(Request $request)
+    public function verify(Request $request): RedirectResponse
     {
         $request->validate([
             'code' => 'required|string',
         ]);
 
-        $userId = session('login_verify_user');
-        $user = User::findOrFail($userId);
+        if (! $this->hasPendingChallenge($request)) {
+            return redirect()->route('login');
+        }
+
+        $user = User::find($request->session()->get('login_verify_user'));
+
+        if (! $user) {
+            $request->session()->forget(['login_verify_user', 'login_verify_time']);
+
+            return redirect()->route('login');
+        }
+
+        $throttleKey = 'login-verify:'.$user->id.'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            return back()->withErrors(['code' => 'Too many attempts. Please try again later.']);
+        }
 
         $token = Cache::get('verify_code_'.$user->email);
 
         if (! $token || $token !== (int) $request->code) {
+            RateLimiter::hit($throttleKey, 60);
+
             return back()->withErrors(['code' => 'Invalid or expired verification code']);
         }
+
+        RateLimiter::clear($throttleKey);
 
         Cache::forget('verify_code_'.$user->email);
 
         Auth::login($user);
 
-        session()->forget(['login_verify_user', 'login_verify_time']);
+        $request->session()->regenerate();
+
+        $request->session()->forget(['login_verify_user', 'login_verify_time']);
 
         return redirect()->intended(route('account', absolute: false));
     }

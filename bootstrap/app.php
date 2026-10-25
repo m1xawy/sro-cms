@@ -3,6 +3,7 @@
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\LocaleMiddleware;
 use App\Http\Middleware\NoCache;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             LocaleMiddleware::class,
             TrustProxies::class,
         ]);
+        $middleware->append(SecurityHeaders::class);
         $middleware->validateCsrfTokens(except: [
             '/callback/*',
             '/webhook/*',

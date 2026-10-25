@@ -44,6 +44,13 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
+            if (User::where('username', $this->get('username'))->exists()) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'username' => trans('auth.failed'),
+                ]);
+            }
 
             $tbUser = TbUser::where('StrUserID', $this->get('username'))->where('password', md5($this->get('password')))->first();
             if (! $tbUser) {
@@ -70,6 +77,14 @@ class LoginRequest extends FormRequest
                     'password' => $this->get('password'),
                 ]
             );
+
+            if (! $user->wasRecentlyCreated) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'username' => trans('auth.failed'),
+                ]);
+            }
 
             Auth::login($user, $this->boolean('remember'));
         }

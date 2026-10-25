@@ -35,6 +35,10 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    Route::get('/login/verify', [AuthenticatedSessionController::class, 'show'])->name('login.show');
+    Route::post('/login/verify', [AuthenticatedSessionController::class, 'verify'])->middleware('throttle:10,1')->name('login.verify');
+    Route::post('/login/verify/resend', [AuthenticatedSessionController::class, 'resendVerify'])->middleware('throttle:5,1')->name('login.resend');
 });
 
 Route::middleware('auth')->group(function () {
@@ -62,8 +66,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/phone/verify', [PhoneVerifyController::class, 'show'])->name('phone.verify');
     Route::post('/phone/verify', [PhoneVerifyController::class, 'confirm'])->name('phone.verify.confirm');
     Route::post('/phone/verify/resend', [PhoneVerifyController::class, 'resend'])->middleware('throttle:5,1')->name('phone.verify.resend');
-
-    Route::get('/login/verify', [AuthenticatedSessionController::class, 'show'])->name('login.show');
-    Route::post('/login/verify', [AuthenticatedSessionController::class, 'verify'])->name('login.verify');
-    Route::post('/login/verify/resend', [AuthenticatedSessionController::class, 'resendVerify'])->name('login.resend');
 });

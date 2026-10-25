@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
@@ -62,9 +63,10 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
+            report($e);
+
             return response()->json([
                 'message' => 'Registration failed',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -146,7 +148,16 @@ class AuthController extends Controller
 
         $user = User::where('username', $request->username)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if ($user) {
+            // A CMS account exists: only its own password may authenticate it.
+            if (! Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'message' => 'Invalid credentials',
+                ], 401);
+            }
+        } else {
+            // Legacy migration path: create the CMS record only for game
+            // accounts that do not have one yet.
             $tbUser = TbUser::where('StrUserID', $request->username)->where('password', md5($request->password))->first();
 
             if (! $tbUser) {
@@ -166,6 +177,12 @@ class AuthController extends Controller
                     'password' => $request->password,
                 ]
             );
+
+            if (! $user->wasRecentlyCreated) {
+                return response()->json([
+                    'message' => 'Invalid credentials',
+                ], 401);
+            }
         }
 
         $result = $this->sendVerifyCode($user);
@@ -191,7 +208,7 @@ class AuthController extends Controller
 
     protected function sendVerifyCode(User $user): array
     {
-        if (! config("global.verify_jid_{$user->jid}")) {
+        if (! config("global.verify_jid_{$user->tbUser?->JID}")) {
             return [];
         }
 
@@ -216,11 +233,21 @@ class AuthController extends Controller
 
         $user = $request->user();
 
+        $throttleKey = 'api-login-verify:'.$user->id.'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            return response()->json(['message' => 'Too many attempts. Please try again later.'], 429);
+        }
+
         $cached = Cache::get('verify_code_'.$user->email);
 
         if (! $cached || $cached !== (int) $request->code) {
+            RateLimiter::hit($throttleKey, 60);
+
             return response()->json(['message' => 'Invalid or expired verification code'], 422);
         }
+
+        RateLimiter::clear($throttleKey);
 
         Cache::forget('verify_code_'.$user->email);
 
@@ -261,13 +288,15 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink(
+        Password::sendResetLink(
             $request->only('email')
         );
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => __($status)], 200)
-            : response()->json(['errors' => ['email' => __($status)]], 422);
+        // Deliberately identical response for known and unknown addresses to
+        // avoid leaking which emails are registered.
+        return response()->json([
+            'message' => 'If that email is registered, a reset link has been sent.',
+        ], 200);
     }
 
     public function logout(Request $request)
@@ -287,6 +316,7 @@ class AuthController extends Controller
         if ($token instanceof PersonalAccessToken && $token->cant('api-access')) {
             abort(403, 'Verification required.');
         }
+
         return response()->json($request->user());
     }
 }

@@ -51,11 +51,17 @@
                         </td>
                         <td>
                             @if($row->status == 'Unused')
-                                <a href="{{ route('admin.vouchers.toggle', $row->id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to disable voucher?')">Disable</a>
+                                <form method="POST" action="{{ route('admin.vouchers.toggle', $row->id) }}" onsubmit="return confirm('Are you sure you want to disable voucher?')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger btn-sm">Disable</button>
+                                </form>
                             @elseif($row->status == 'Disabled')
-                                <a href="{{ route('admin.vouchers.toggle', $row->id) }}" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to enable voucher?')">Enable</a>
+                                <form method="POST" action="{{ route('admin.vouchers.toggle', $row->id) }}" onsubmit="return confirm('Are you sure you want to enable voucher?')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-sm">Enable</button>
+                                </form>
                             @else
-                                <button href="#" class="btn btn-danger btn-sm" disabled="">Disable</button>
+                                <button type="button" class="btn btn-danger btn-sm" disabled>Disable</button>
                             @endif
                         </td>
                     </tr>

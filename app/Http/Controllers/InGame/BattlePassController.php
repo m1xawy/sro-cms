@@ -28,13 +28,13 @@ class BattlePassController extends Controller
         try {
             $charname = Char::resolveCharname($request);
             if ($charname === null) {
-                throw new \InvalidArgumentException('Unable to resolve character name (guard: ' . strtolower(config('global.server.guard', 'isro')) . ').');
+                throw new \InvalidArgumentException('Unable to resolve character name (guard: '.strtolower(config('global.server.guard', 'isro')).').');
             }
 
             $char = Char::where('CharName16', $charname)->first();
             $charID = $char?->CharID;
             if ($charID === null) {
-                throw new \InvalidArgumentException('Character not found: ' . $charname);
+                throw new \InvalidArgumentException('Character not found: '.$charname);
             }
 
             $record = BattlePass::getOrCreateForChar($charID);
@@ -51,9 +51,9 @@ class BattlePassController extends Controller
             foreach ($tiers as &$tier) {
                 $tier['freeClaimed'] = $record->hasClaimedItem($tier['freeItem']['itemID']);
                 $tier['vipClaimed'] = $record->hasClaimedItem($tier['vipItem']['itemID']);
-                $tier['canClaimFree'] = ($progress['currentLevel'] >= $tier['id']) && !$tier['freeClaimed'];
-                $tier['canClaimVIP'] = ($progress['currentLevel'] >= $tier['id']) && $record->IsPremium && !$tier['vipClaimed'];
-                $tier['vipLocked'] = !$record->IsPremium;
+                $tier['canClaimFree'] = ($progress['currentLevel'] >= $tier['id']) && ! $tier['freeClaimed'];
+                $tier['canClaimVIP'] = ($progress['currentLevel'] >= $tier['id']) && $record->IsPremium && ! $tier['vipClaimed'];
+                $tier['vipLocked'] = ! $record->IsPremium;
 
                 $freeInfo = $itemsInfo[$tier['freeItem']['itemID']] ?? null;
                 $vipInfo = $itemsInfo[$tier['vipItem']['itemID']] ?? null;
@@ -97,7 +97,7 @@ class BattlePassController extends Controller
                 'silkPerPoint' => (int) config('ingame.battlepass.silk_per_point'),
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'error' => $e->getMessage()], 422);
+            return $this->errorResponse($e);
         }
     }
 
@@ -115,7 +115,7 @@ class BattlePassController extends Controller
             $tierID = (int) $request->input('tier_id', 0);
             $claimType = $request->input('type', 'free');
 
-            if ($tierID <= 0 || !in_array($claimType, ['free', 'vip'], true)) {
+            if ($tierID <= 0 || ! in_array($claimType, ['free', 'vip'], true)) {
                 throw new \InvalidArgumentException('Invalid request');
             }
 
@@ -144,7 +144,7 @@ class BattlePassController extends Controller
                 'deliveryMethod' => strtolower(config('global.server.guard')),
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'error' => $e->getMessage()], 422);
+            return $this->errorResponse($e);
         }
     }
 
@@ -169,7 +169,7 @@ class BattlePassController extends Controller
                 'remainingSilk' => $remainingSilk,
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'error' => $e->getMessage()], 422);
+            return $this->errorResponse($e);
         }
     }
 
@@ -196,7 +196,7 @@ class BattlePassController extends Controller
                 'remainingSilk' => $remainingSilk,
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'error' => $e->getMessage()], 422);
+            return $this->errorResponse($e);
         }
     }
 
@@ -240,7 +240,7 @@ class BattlePassController extends Controller
                 'pointsAdded' => (int) $validated['points'],
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'error' => $e->getMessage()], 422);
+            return $this->errorResponse($e);
         }
     }
 
@@ -258,7 +258,7 @@ class BattlePassController extends Controller
             $charID = $this->resolveCharID($request);
             $jid = Char::find($charID)?->JID;
 
-            if (!$jid) {
+            if (! $jid) {
                 return response()->json(['success' => false, 'message' => 'Unable to get JID for this character'], 422);
             }
 
@@ -271,7 +271,7 @@ class BattlePassController extends Controller
                 'jid' => $jid,
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'error' => $e->getMessage()], 422);
+            return $this->errorResponse($e);
         }
     }
 
@@ -279,12 +279,12 @@ class BattlePassController extends Controller
     {
         $charname = Char::resolveCharname($request);
         if ($charname === null) {
-            throw new \InvalidArgumentException('Unable to resolve character name (guard: ' . strtolower(config('global.server.guard', 'isro')) . ').');
+            throw new \InvalidArgumentException('Unable to resolve character name (guard: '.strtolower(config('global.server.guard', 'isro')).').');
         }
 
         $char = Char::where('CharName16', $charname)->first();
-        if (!$char) {
-            throw new \InvalidArgumentException('Character not found: ' . $charname);
+        if (! $char) {
+            throw new \InvalidArgumentException('Character not found: '.$charname);
         }
 
         if (auth()->check() && (int) $char->JID !== (int) auth()->user()->jid) {
@@ -292,6 +292,25 @@ class BattlePassController extends Controller
         }
 
         return $char->CharID;
+    }
+
+    private function errorResponse(\Throwable $e)
+    {
+        if ($e instanceof \InvalidArgumentException) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error' => null,
+            ], 422);
+        }
+
+        report($e);
+
+        return response()->json([
+            'success' => false,
+            'message' => __('Something went wrong. Please try again.'),
+            'error' => null,
+        ], 422);
     }
 
     private function renderItemTooltip(object $itemInfo, int $jid, int $quantity): ?string

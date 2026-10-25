@@ -155,7 +155,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getRoleAttribute()
     {
-        return cache()->remember("user_role_{$this->jid}", 600, fn () => $this->role()->first());
+        return $this->role()->first();
     }
 
     public static function getUserCount()

@@ -7,9 +7,9 @@ use App\Models\SRO\Account\TbUser;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class DonateService
 {
@@ -22,25 +22,25 @@ class DonateService
         ]);
 
         $package = collect($config['package'])->firstWhere('price', $request->input('price'));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['paypal' => 'Invalid package selected.'])->withInput();
         }
 
         $tokenResponse = Http::withBasicAuth($config['client_id'], $config['client_secret'])
             ->asForm()
-            ->post($config['endpoint'] . '/v1/oauth2/token', [
+            ->post($config['endpoint'].'/v1/oauth2/token', [
                 'grant_type' => 'client_credentials',
             ]);
 
-        if (!$tokenResponse->successful()) {
+        if (! $tokenResponse->successful()) {
             return back()->withErrors(['paypal' => 'Unable to get PayPal access token.'])->withInput();
         }
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $tokenResponse->json('access_token'),
+            'Authorization' => 'Bearer '.$tokenResponse->json('access_token'),
             'PayPal-Request-Id' => (string) Str::uuid(),
-        ])->post($config['endpoint'] . '/v2/checkout/orders', [
+        ])->post($config['endpoint'].'/v2/checkout/orders', [
             'intent' => 'CAPTURE',
             'payment_source' => [
                 'paypal' => [
@@ -62,18 +62,18 @@ class DonateService
             ],
         ]);
 
-        if (!$response->successful()) {
-            return back()->withErrors(['paypal' => 'Payment Failed: ' . ($response->json('error_description') ?? 'An error occurred')])->withInput();
+        if (! $response->successful()) {
+            return back()->withErrors(['paypal' => 'Payment Failed: '.($response->json('error_description') ?? 'An error occurred')])->withInput();
         }
 
         $approvalLink = collect($response->json('links'))->firstWhere('rel', 'payer-action') ?? collect($response->json('links'))->firstWhere('rel', 'approve');
-        if (!$approvalLink) {
+        if (! $approvalLink) {
             return back()->withErrors(['paypal' => 'Payment Failed: Approval link not found.'])->withInput();
         }
 
         $separator = str_contains($approvalLink['href'], '?') ? '&' : '?';
 
-        return redirect()->away($approvalLink['href'] . $separator . 'useraction=commit');
+        return redirect()->away($approvalLink['href'].$separator.'useraction=commit');
     }
 
     public function callbackPaypal(Request $request)
@@ -84,42 +84,42 @@ class DonateService
 
         $tokenResponse = Http::withBasicAuth($config['client_id'], $config['client_secret'])
             ->asForm()
-            ->post($config['endpoint'] . '/v1/oauth2/token', [
+            ->post($config['endpoint'].'/v1/oauth2/token', [
                 'grant_type' => 'client_credentials',
             ]);
 
-        if (!$tokenResponse->successful()) {
+        if (! $tokenResponse->successful()) {
             return back()->withErrors(['paypal' => 'Unable to get PayPal access token.'])->withInput();
         }
 
         $orderResponse = Http::withHeaders([
-            'Content-Type'  => 'application/json',
-            'Authorization' => 'Bearer ' . $tokenResponse->json('access_token'),
-        ])->get($config['endpoint'] . '/v2/checkout/orders/' . $request->get('token'));
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$tokenResponse->json('access_token'),
+        ])->get($config['endpoint'].'/v2/checkout/orders/'.$request->get('token'));
 
-        if (!$orderResponse->successful()) {
-            return back()->withErrors(['paypal' => 'Payment Failed: ' . ($orderResponse->json('error_description') ?? 'An error occurred')])->withInput();
+        if (! $orderResponse->successful()) {
+            return back()->withErrors(['paypal' => 'Payment Failed: '.($orderResponse->json('error_description') ?? 'An error occurred')])->withInput();
         }
 
         if ($orderResponse->json('status') === 'APPROVED') {
             $captureResponse = Http::withHeaders([
-                'Content-Type'      => 'application/json',
-                'Authorization'     => 'Bearer ' . $tokenResponse->json('access_token'),
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer '.$tokenResponse->json('access_token'),
                 'PayPal-Request-Id' => (string) Str::uuid(),
-            ])->post($config['endpoint'] . '/v2/checkout/orders/' . $request->get('token') . '/capture', new \stdClass());
+            ])->post($config['endpoint'].'/v2/checkout/orders/'.$request->get('token').'/capture', new \stdClass);
 
-            if (!$captureResponse->successful()) {
-                return back()->withErrors(['paypal' => 'Payment Failed: ' . ($captureResponse->json('message') ?? 'An error occurred')])->withInput();
+            if (! $captureResponse->successful()) {
+                return back()->withErrors(['paypal' => 'Payment Failed: '.($captureResponse->json('message') ?? 'An error occurred')])->withInput();
             }
 
             if ($captureResponse->json('status') !== 'COMPLETED') {
-                return back()->withErrors(['paypal' => 'Payment not completed. Status: ' . $captureResponse->json('status')])->withInput();
+                return back()->withErrors(['paypal' => 'Payment not completed. Status: '.$captureResponse->json('status')])->withInput();
             }
 
             $order = $captureResponse->json();
         } else {
             if ($orderResponse->json('status') !== 'COMPLETED') {
-                return back()->withErrors(['paypal' => 'Payment not completed. Status: ' . $orderResponse->json('status')])->withInput();
+                return back()->withErrors(['paypal' => 'Payment not completed. Status: '.$orderResponse->json('status')])->withInput();
             }
 
             $order = $orderResponse->json();
@@ -130,25 +130,25 @@ class DonateService
         }
 
         $paidAmount = $order['purchase_units'][0]['payments']['captures'][0]['amount']['value'] ?? null;
-        if (!$paidAmount) {
+        if (! $paidAmount) {
             return back()->withErrors(['paypal' => 'Unable to determine paid amount.'])->withInput();
         }
 
         $package = collect($config['package'])->firstWhere('price', $paidAmount);
-        if (!$package) {
-            return back()->withErrors(['paypal' => 'Invalid package amount: $' . $paidAmount])->withInput();
+        if (! $package) {
+            return back()->withErrors(['paypal' => 'Invalid package amount: $'.$paidAmount])->withInput();
         }
 
         $customId = $orderResponse->json('purchase_units.0.custom_id')
             ?? $order['purchase_units'][0]['custom_id']
             ?? $order['purchase_units'][0]['payments']['captures'][0]['custom_id']
             ?? null;
-        if (!$customId) {
+        if (! $customId) {
             return back()->withErrors(['paypal' => 'Unable to identify user.'])->withInput();
         }
 
         $user = User::find($customId);
-        if (!$user) {
+        if (! $user) {
             return back()->withErrors(['paypal' => 'User not found.'])->withInput();
         }
 
@@ -176,7 +176,7 @@ class DonateService
 
         TbUser::updateSilk($user->jid, $package['type'], $package['value']);
 
-        return redirect()->route('account.donate')->with('success', number_format($package['value']) . ' ' . __('Silk has been added to your account.'));
+        return redirect()->route('account.donate')->with('success', number_format($package['value']).' '.__('Silk has been added to your account.'));
     }
 
     public function processStripe(Request $request)
@@ -188,13 +188,13 @@ class DonateService
         ]);
 
         $package = collect($config['package'])->firstWhere('price', $request->input('price'));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['stripe' => 'Invalid package selected.'])->withInput();
         }
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $config['secret_key'],
-        ])->asForm()->post($config['endpoint'] . '/v1/checkout/sessions', [
+            'Authorization' => 'Bearer '.$config['secret_key'],
+        ])->asForm()->post($config['endpoint'].'/v1/checkout/sessions', [
             'payment_method_types[]' => 'card',
             'line_items[0][price_data][currency]' => strtolower($config['currency']),
             'line_items[0][price_data][product_data][name]' => $package['name'],
@@ -207,11 +207,11 @@ class DonateService
             'metadata[package_price]' => $package['price'],
         ]);
 
-        if (!$response->successful()) {
-            return back()->withErrors(['stripe' => 'Payment Failed: ' . ($response->json('error.message') ?? 'An error occurred')])->withInput();
+        if (! $response->successful()) {
+            return back()->withErrors(['stripe' => 'Payment Failed: '.($response->json('error.message') ?? 'An error occurred')])->withInput();
         }
 
-        if (!$response->json('url') || !$response->json('id')) {
+        if (! $response->json('url') || ! $response->json('id')) {
             return back()->withErrors(['stripe' => 'Payment Failed: An error occurred'])->withInput();
         }
 
@@ -241,7 +241,7 @@ class DonateService
 
     public function webhookStripe(Request $request)
     {
-        $config  = config('donate.stripe');
+        $config = config('donate.stripe');
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
 
@@ -261,8 +261,8 @@ class DonateService
             }
         }
 
-        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $config['webhook_secret']);
-        if (!hash_equals($expected, $hash ?? '')) {
+        $expected = hash_hmac('sha256', $timestamp.'.'.$payload, $config['webhook_secret']);
+        if (! hash_equals($expected, $hash ?? '')) {
             return response('Invalid signature', 400);
         }
 
@@ -277,24 +277,24 @@ class DonateService
         }
 
         $donate = Donate::where('transaction_id', (string) $session['id'])->where('status', 'pending')->first();
-        if (!$donate) {
+        if (! $donate) {
             return response('Transaction not found or already processed.', 409);
         }
 
         $package = collect($config['package'])->firstWhere('price', $donate->amount);
-        if (!$package) {
+        if (! $package) {
             return response('Invalid package price', 422);
         }
 
         $user = User::where('jid', $donate->jid)->first();
-        if (!$user) {
+        if (! $user) {
             return response('User not found', 404);
         }
 
         try {
             DB::transaction(function () use ($user, $package, $donate) {
                 $row = Donate::whereKey($donate->id)->lockForUpdate()->first();
-                if (!$row || $row->status !== 'pending') {
+                if (! $row || $row->status !== 'pending') {
                     throw new \RuntimeException('Transaction not found or already processed.');
                 }
 
@@ -318,28 +318,28 @@ class DonateService
         ]);
 
         $package = collect($config['package'])->firstWhere('price', $request->input('price'));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['nowpayments' => 'Invalid package selected.'])->withInput();
         }
 
         $response = Http::withHeaders([
             'x-api-key' => $config['api_key'],
             'Content-Type' => 'application/json',
-        ])->post($config['endpoint'] . '/invoice', [
+        ])->post($config['endpoint'].'/invoice', [
             'price_amount' => $package['price'],
             'price_currency' => strtolower($config['currency']),
-            'order_id' => uniqid() . rand(100, 999),
+            'order_id' => uniqid().rand(100, 999),
             'order_description' => $package['name'],
             'ipn_callback_url' => route('webhook', ['method' => 'nowpayments']),
             'success_url' => route('callback', ['method' => 'nowpayments', 'status' => 'success']),
             'cancel_url' => route('callback', ['method' => 'nowpayments', 'status' => 'fail']),
         ]);
 
-        if (!$response->successful()) {
-            return back()->withErrors(['nowpayments' => 'Payment Failed: ' . ($response->json('message') ?? 'An error occurred')])->withInput();
+        if (! $response->successful()) {
+            return back()->withErrors(['nowpayments' => 'Payment Failed: '.($response->json('message') ?? 'An error occurred')])->withInput();
         }
 
-        if (!$response->json('invoice_url') || !$response->json('id')) {
+        if (! $response->json('invoice_url') || ! $response->json('id')) {
             return back()->withErrors(['nowpayments' => 'Payment Failed: An error occurred'])->withInput();
         }
 
@@ -372,7 +372,7 @@ class DonateService
         $config = config('donate.nowpayments');
         $data = $request->json()->all();
 
-        if (!$data) {
+        if (! $data) {
             return response('Invalid payload', 400);
         }
 
@@ -380,7 +380,7 @@ class DonateService
         $sorted = $data;
         ksort($sorted);
         $hash = hash_hmac('sha512', json_encode($sorted, JSON_UNESCAPED_UNICODE), $config['ipn_secret']);
-        if (!hash_equals($hash, $received)) {
+        if (! hash_equals($hash, $received)) {
             return response('Invalid signature', 400);
         }
 
@@ -389,24 +389,24 @@ class DonateService
         }
 
         $donate = Donate::where('transaction_id', (string) $data['invoice_id'])->where('status', 'pending')->first();
-        if (!$donate) {
+        if (! $donate) {
             return response('Transaction not found or already processed.', 409);
         }
 
         $package = collect($config['package'])->firstWhere('price', $donate->amount);
-        if (!$package) {
+        if (! $package) {
             return response('Invalid package price', 422);
         }
 
         $user = User::where('jid', $donate->jid)->first();
-        if (!$user) {
+        if (! $user) {
             return response('User not found', 404);
         }
 
         try {
             DB::transaction(function () use ($user, $package, $donate) {
                 $row = Donate::whereKey($donate->id)->lockForUpdate()->first();
-                if (!$row || $row->status !== 'pending') {
+                if (! $row || $row->status !== 'pending') {
                     throw new \RuntimeException('Transaction not found or already processed.');
                 }
 
@@ -430,21 +430,21 @@ class DonateService
         ]);
 
         $package = collect($config['package'])->firstWhere('price', $request->input('price'));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['fawaterk' => 'Invalid package selected.'])->withInput();
         }
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $config['api_key'],
-        ])->post($config['endpoint'] . '/api/v2/createInvoiceLink', [
+            'Authorization' => 'Bearer '.$config['api_key'],
+        ])->post($config['endpoint'].'/api/v2/createInvoiceLink', [
             'cartTotal' => $package['price'],
             'currency' => $config['currency'],
             'customer' => [
                 'first_name' => $user->username,
                 'email' => $user->email,
             ],
-            'redirectionUrls'  => [
+            'redirectionUrls' => [
                 'successUrl' => route('callback', ['method' => 'fawaterk', 'status' => 'success']),
                 'failUrl' => route('callback', ['method' => 'fawaterk', 'status' => 'fail']),
                 'pendingUrl' => route('callback', ['method' => 'fawaterk', 'status' => 'pending']),
@@ -458,11 +458,11 @@ class DonateService
             ],
         ]);
 
-        if (!$response->successful() || $response->json('status') !== 'success') {
-            return back()->withErrors(['fawaterk' => 'Payment Failed: ' . (is_array($response->json('message')) ? collect($response->json('message'))->flatten()->first() : $response->json('message')) ?? 'An error occurred'])->withInput();
+        if (! $response->successful() || $response->json('status') !== 'success') {
+            return back()->withErrors(['fawaterk' => 'Payment Failed: '.(is_array($response->json('message')) ? collect($response->json('message'))->flatten()->first() : $response->json('message')) ?? 'An error occurred'])->withInput();
         }
 
-        if (!$response->json('data.url') || !$response->json('data.invoiceId')) {
+        if (! $response->json('data.url') || ! $response->json('data.invoiceId')) {
             return back()->withErrors(['fawaterk' => 'Payment Failed: An error occurred'])->withInput();
         }
 
@@ -509,12 +509,12 @@ class DonateService
         $config = config('donate.fawaterk');
         $data = $request->all();
 
-        if (!$data) {
+        if (! $data) {
             return response('Invalid payload', 400);
         }
 
-        $hash = hash_hmac('sha256', 'InvoiceId=' . $data['invoice_id'] . '&InvoiceKey=' . $data['invoice_key'] . '&PaymentMethod=' . $data['payment_method'], $config['provider_key']);
-        if (!hash_equals($hash, $data['hashKey'])) {
+        $hash = hash_hmac('sha256', 'InvoiceId='.$data['invoice_id'].'&InvoiceKey='.$data['invoice_key'].'&PaymentMethod='.$data['payment_method'], $config['provider_key']);
+        if (! hash_equals($hash, $data['hashKey'])) {
             return response('Invalid Hash', 400);
         }
 
@@ -523,24 +523,24 @@ class DonateService
         }
 
         $donate = Donate::where('transaction_id', (string) $data['invoice_id'])->where('status', 'pending')->first();
-        if (!$donate) {
+        if (! $donate) {
             return response('Transaction not found or already processed.', 409);
         }
 
         $package = collect($config['package'])->firstWhere('price', $donate->amount);
-        if (!$package) {
+        if (! $package) {
             return response('Invalid package price', 422);
         }
 
         $user = User::where('jid', $donate->jid)->first();
-        if (!$user) {
+        if (! $user) {
             return response('User not found', 404);
         }
 
         try {
             DB::transaction(function () use ($user, $package, $donate) {
                 $row = Donate::whereKey($donate->id)->lockForUpdate()->first();
-                if (!$row || $row->status !== 'pending') {
+                if (! $row || $row->status !== 'pending') {
                     throw new \RuntimeException('Transaction not found or already processed.');
                 }
 
@@ -564,15 +564,17 @@ class DonateService
         ]);
 
         $user = Auth::user();
+        $escape = fn ($value) => htmlspecialchars((string) $value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
         $xml = trim('<?xml version="1.0" encoding="utf-8"?>
         <APIRequest>
             <params>
-                <username>' . $config['api_key'] . '</username>
-                <password>' . $config['api_password'] . '</password>
+                <username>'.$escape($config['api_key']).'</username>
+                <password>'.$escape($config['api_password']).'</password>
                 <cmd>epinadd</cmd>
-                <epinusername>' . $user->username . '</epinusername>
-                <epincode>' . $request->code . '</epincode>
-                <epinpass>' . $request->password . '</epinpass>
+                <epinusername>'.$escape($user->username).'</epinusername>
+                <epincode>'.$escape($request->code).'</epincode>
+                <epinpass>'.$escape($request->password).'</epinpass>
             </params>
         </APIRequest>');
 
@@ -580,7 +582,7 @@ class DonateService
             'data' => urlencode($xml),
         ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             return back()->withErrors(['maxicard' => 'Payment Failed: An error occurred'])->withInput();
         }
 
@@ -590,11 +592,11 @@ class DonateService
         }
 
         if (trim($xml->params->durum) !== 'ok' || intval(trim($xml->params->siparis_no)) <= 0) {
-            return back()->withErrors(['maxicard' => 'Payment Failed: ' . trim($xml->params->aciklama)])->withInput();
+            return back()->withErrors(['maxicard' => 'Payment Failed: '.trim($xml->params->aciklama)])->withInput();
         }
 
         $package = collect($config['package'])->firstWhere('price', intval(preg_replace('/[^0-9]/', '', $xml->params->tutar)));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['maxicard' => 'Invalid package price.'])->withInput();
         }
 
@@ -621,7 +623,7 @@ class DonateService
 
         TbUser::updateSilk($user->jid, $package['type'], $package['value']);
 
-        return redirect()->route('account.donate')->with('success', number_format($package['value']) . ' ' . __('Silk has been added to your account.'));
+        return redirect()->route('account.donate')->with('success', number_format($package['value']).' '.__('Silk has been added to your account.'));
     }
 
     public function processHipocard(Request $request)
@@ -645,19 +647,19 @@ class DonateService
             'used_ip' => $request->ip(),
         ]);
 
-        if (!$response->successful() || $response->json('success') !== true) {
-            return back()->withErrors(['hipocard' => 'Payment Failed: ' . ($response->json('message') ?? 'An error occurred')])->withInput();
+        if (! $response->successful() || $response->json('success') !== true) {
+            return back()->withErrors(['hipocard' => 'Payment Failed: '.($response->json('message') ?? 'An error occurred')])->withInput();
         }
 
         $package = collect($config['package'])->firstWhere('price', intval($response->json('data.total_sales')));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['hipocard' => 'Invalid package price.'])->withInput();
         }
 
         // Deterministic idempotency key from the e-PIN (a fresh random id per
         // request would defeat UNIQUE(transaction_id) and let one e-PIN pay
         // twice). Insert BEFORE crediting (see PayPal).
-        $transactionId = 'hipocard-' . substr(hash('sha256', 'hipocard|' . trim($request->code)), 0, 32);
+        $transactionId = 'hipocard-'.substr(hash('sha256', 'hipocard|'.trim($request->code)), 0, 32);
 
         try {
             Donate::log([
@@ -679,7 +681,7 @@ class DonateService
 
         TbUser::updateSilk($user->jid, $package['type'], $package['value']);
 
-        return redirect()->route('account.donate')->with('success', number_format($package['value']) . ' ' . __('Silk has been added to your account.'));
+        return redirect()->route('account.donate')->with('success', number_format($package['value']).' '.__('Silk has been added to your account.'));
     }
 
     public function processHipopay(Request $request)
@@ -691,12 +693,12 @@ class DonateService
         ]);
 
         $package = collect($config['package'])->firstWhere('price', $request->input('price'));
-        if (!$package) {
+        if (! $package) {
             return back()->withErrors(['hipopay' => 'Invalid package selected.'])->withInput();
         }
 
         $user = Auth::user();
-        $hash = base64_encode(hash_hmac('sha256', $user->jid . trim($user->email) . $user->username . $config['api_key'], $config['api_password'], true));
+        $hash = base64_encode(hash_hmac('sha256', $user->jid.trim($user->email).$user->username.$config['api_key'], $config['api_password'], true));
 
         $response = Http::asForm()->post($config['endpoint'], [
             'api_key' => $config['api_key'],
@@ -710,7 +712,7 @@ class DonateService
             'product' => [
                 'name' => $package['name'],
                 'price' => $package['price'] * 100,
-                'reference_id' => uniqid() . rand(100, 999),
+                'reference_id' => uniqid().rand(100, 999),
                 'commission_type' => $config['commission_type'],
             ],
         ]);
@@ -731,7 +733,7 @@ class DonateService
             }
         }
 
-        return back()->withErrors(['hipopay' => 'Payment Failed: ' . ($response->json('message') ?? 'An error occurred')])->withInput();
+        return back()->withErrors(['hipopay' => 'Payment Failed: '.($response->json('message') ?? 'An error occurred')])->withInput();
     }
 
     public function webhookHipopay(Request $request)
@@ -739,17 +741,17 @@ class DonateService
         $config = config('donate.hipopay');
 
         $data = $request->json()->all();
-        if (!$data) {
+        if (! $data) {
             return response('Invalid payload', 400);
         }
 
         $user = User::where('jid', $data['user_id'])->first();
-        if (!$user) {
+        if (! $user) {
             return response('User not found', 404);
         }
 
-        $hash = base64_encode(hash_hmac('sha256', $data['transaction_id'] . $data['user_id'] . $data['email'] . $data['name'] . $data['status'] . $config['api_key'], $config['api_password'], true));
-        if (!hash_equals($hash, $data['hash'])) {
+        $hash = base64_encode(hash_hmac('sha256', $data['transaction_id'].$data['user_id'].$data['email'].$data['name'].$data['status'].$config['api_key'], $config['api_password'], true));
+        if (! hash_equals($hash, $data['hash'])) {
             return response('Invalid Hash', 400);
         }
 
@@ -762,19 +764,19 @@ class DonateService
         }
 
         $donate = Donate::where('method', 'HipoPay')->where('jid', $user->jid)->where('status', 'pending')->where('amount', intval($data['payment_total'] / 100))->latest('id')->first();
-        if (!$donate) {
+        if (! $donate) {
             return response('No matching pending transaction.', 422);
         }
 
         $package = collect($config['package'])->firstWhere('price', (int) $donate->amount);
-        if (!$package) {
+        if (! $package) {
             return response('Invalid package price', 422);
         }
 
         try {
             DB::transaction(function () use ($user, $package, $data, $donate) {
                 $row = Donate::whereKey($donate->id)->lockForUpdate()->first();
-                if (!$row || $row->status !== 'pending') {
+                if (! $row || $row->status !== 'pending') {
                     throw new \RuntimeException('Transaction already processed.');
                 }
 

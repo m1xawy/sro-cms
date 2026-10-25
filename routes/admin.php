@@ -1,22 +1,22 @@
 <?php
 
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CharacterController;
-use App\Http\Controllers\Admin\LogController;
-use App\Http\Controllers\Admin\TicketController;
-use App\Http\Controllers\Admin\VoucherController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DownloadController;
+use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\PagesController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VoucherController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/index', [DashboardController::class, 'index'])->name('admin');
     Route::get('/admin/worldmap', [DashboardController::class, 'worldmap'])->name('admin.worldmap');
 
-    Route::prefix('admin')->name('admin.')->group(function() {
+    Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/logs/donate', [LogController::class, 'donate'])->name('logs.donate');
         Route::get('/logs/referral', [LogController::class, 'referral'])->name('logs.referral');
         Route::get('/logs/vote', [LogController::class, 'vote'])->name('logs.vote');
@@ -74,11 +74,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('vouchers', [VoucherController::class, 'index'])->name('vouchers.index');
         Route::get('/vouchers/create', [VoucherController::class, 'create'])->name('vouchers.create');
         Route::post('vouchers', [VoucherController::class, 'store'])->name('vouchers.store');
-        Route::get('/vouchers/{voucher}/toggle', [VoucherController::class, 'toggle'])->name('vouchers.toggle');
+        Route::post('/vouchers/{voucher}/toggle', [VoucherController::class, 'toggle'])->name('vouchers.toggle');
 
-        Route::get('/tickets', [TicketController::class,'index'])->name('tickets.index');
-        Route::get('/tickets/{ticket}', [TicketController::class,'show'])->name('ticket.show');
-        Route::post('/tickets/{ticket}/reply', [TicketController::class,'reply'])->name('ticket.reply');
-        Route::post('/tickets/{ticket}/close', [TicketController::class,'close'])->name('ticket.close');
+        Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('ticket.show');
+        Route::post('/tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('ticket.reply');
+        Route::post('/tickets/{ticket}/close', [TicketController::class, 'close'])->name('ticket.close');
     });
 });
