@@ -61,12 +61,15 @@ class LoginRequest extends FormRequest
                 ]);
             }
 
-            if (config('global.server.version') === 'vSRO') {
-                $jid = $tbUser->JID;
-                $email = $tbUser->Email ?? "{$jid}@mail.com";
-            } else {
-                $jid = $tbUser->PortalJID;
-                $email = $tbUser->muUser?->muEmail?->EmailAddr ?? "{$jid}@mail.com";
+            $jid = $tbUser->PortalJID ?? $tbUser->JID;
+            $email = $tbUser->muUser?->muEmail?->EmailAddr ?? $tbUser->Email ?? "{$jid}@mail.com";
+
+            if (blank($jid)) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'username' => trans('auth.failed'),
+                ]);
             }
 
             $user = User::firstOrCreate(

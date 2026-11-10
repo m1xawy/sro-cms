@@ -38,7 +38,7 @@ class SettingsServiceProvider extends ServiceProvider
             $this->applyJsonConfig($settings, 'sliders', 'global.slider');
             $this->applyJsonConfig($settings, 'footer', 'global.footer');
             $this->applyJsonConfig($settings, 'cache', 'global.cache');
-            $this->applyJsonConfig($settings, 'server', 'global.server');
+            $this->applyServerSettings($settings);
             $this->applyBattlePassSettings($settings);
             $this->applyInGameRankingSettings($settings);
         } catch (\Throwable) {
@@ -303,6 +303,27 @@ class SettingsServiceProvider extends ServiceProvider
         }
 
         Config::set('ingame.ranking', $merged);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Server
+    |--------------------------------------------------------------------------
+    */
+
+    private function applyServerSettings(array $settings): void
+    {
+        $version = config('global.server.version');
+
+        $server = $this->decodeJson($settings['server'] ?? null);
+
+        if (! empty($server)) {
+            unset($server['version']);
+
+            Config::set('global.server', array_replace_recursive(config('global.server', []), $server));
+        }
+
+        Config::set('global.server.version', $version);
     }
 
     /*

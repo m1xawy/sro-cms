@@ -18,20 +18,6 @@
                     <div class="display-5 fw-bold text-body-emphasis">{{ App\Models\SRO\Account\TbUser::getTbUserCount() }}+</div>
                     <p class="text-body-secondary fw-bold text-uppercase small mt-1">Registered Accounts</p>
                 </div>
-
-                @php
-                    if (config('global.server.version') !== 'vSRO') {
-                        $contentConfig = collect(App\Models\SRO\Shard\ContentConfig::getContentConfig())->pluck('Value', 'CodeName128')->toArray();
-                    }
-                @endphp
-                <div class="col-lg-3 col-6 py-4">
-                    <div class="display-5 fw-bold text-body-emphasis">{{ $contentConfig['EXP_RATIO'] ?? 1 }}x</div>
-                    <p class="text-body-secondary fw-bold text-uppercase small mt-1">EXP Rate</p>
-                </div>
-                <div class="col-lg-3 col-6 py-4">
-                    <div class="display-5 fw-bold text-body-emphasis">{{ $contentConfig['DROP_ITEM_RATIO'] ?? 1 }}x</div>
-                    <p class="text-body-secondary fw-bold text-uppercase small mt-1">Drop Rate</p>
-                </div>
             </div>
         </div>
     </section>

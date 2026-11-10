@@ -56,7 +56,7 @@ class TbUser extends Model
      * @var array<int, string>
      */
     protected $hidden = [
-        'password'
+        'password',
     ];
 
     /**
@@ -121,7 +121,7 @@ class TbUser extends Model
             'regtime' => now(),
             'reg_ip' => $ip,
             'sec_primary' => 3,
-            'sec_content' => 3
+            'sec_content' => 3,
         ]);
     }
 
@@ -180,6 +180,7 @@ class TbUser extends Model
         $blocked = BlockedUser::where('UserJID', $this->JID)->where('Type', 1)->first();
         if ($blocked) {
             $blocked->update(['timeEnd' => now()]);
+
             return true;
         }
 
@@ -199,7 +200,7 @@ class TbUser extends Model
     {
         if (config('global.server.version') === 'vSRO') {
             return $this->belongsTo(User::class, 'JID', 'jid');
-        } else{
+        } else {
             return $this->belongsTo(User::class, 'PortalJID', 'jid');
         }
     }
@@ -224,7 +225,12 @@ class TbUser extends Model
     public function getGetSilkAttribute()
     {
         return Cache::remember("tb_user_silk_{$this->JID}", config('global.cache.account_info', 600), function () {
-            return $this->SkSilk()->first();
+            return $this->SkSilk()->first() ?? new SkSilk([
+                'JID' => $this->JID,
+                'silk_own' => 0,
+                'silk_gift' => 0,
+                'silk_point' => 0,
+            ]);
         });
     }
 
