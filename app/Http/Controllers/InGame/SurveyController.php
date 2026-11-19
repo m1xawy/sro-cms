@@ -9,6 +9,6 @@ class SurveyController extends Controller
 {
     public function survey(Request $request)
     {
-        return view('in-game.survey.index');
+        return view('ingame.survey.index');
     }
 }

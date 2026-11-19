@@ -12,7 +12,7 @@ class BattlePassController extends Controller
 {
     public function index(Request $request)
     {
-        return view('in-game.battle-pass.index');
+        return view('ingame.battle-pass.index');
     }
 
     public function tiers(Request $request)

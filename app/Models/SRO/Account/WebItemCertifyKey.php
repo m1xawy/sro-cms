@@ -61,7 +61,7 @@ class WebItemCertifyKey extends Model
         $jid = $request->query('jid');
         $key = $request->query('key');
 
-        if (empty($jid) || empty($key)) {
+        if (! is_string($jid) || ! is_string($key) || $jid === '' || $key === '') {
             return null;
         }
 
@@ -71,7 +71,7 @@ class WebItemCertifyKey extends Model
         }
 
         $generatedKey = strtoupper(md5($jid . $certifyKeyRecord->Certifykey . config('global.server.saltKey')));
-        if ($generatedKey !== strtoupper($key)) {
+        if (! hash_equals($generatedKey, strtoupper($key))) {
             return null;
         }
 

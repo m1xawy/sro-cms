@@ -58,6 +58,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS
+    |--------------------------------------------------------------------------
+    |
+    | Leave this disabled and let the current request scheme decide, so the app
+    | works on http://localhost, plain http IPs and HTTPS behind Cloudflare at
+    | the same time. Enable only if every request must be generated as HTTPS.
+    |
+    */
+
+    'force_https' => (bool) env('APP_FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

@@ -9,6 +9,6 @@ class BannerController extends Controller
 {
     public function banner(Request $request)
     {
-        return view('in-game.banner.index');
+        return view('ingame.banner.index');
     }
 }

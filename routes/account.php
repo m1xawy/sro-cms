@@ -13,12 +13,12 @@ Route::middleware(array_filter(['auth', config('global.register_confirm') ? 'ver
 
     Route::prefix('account')->name('account.')->group(function() {
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
-        Route::patch('/edit', [ProfileController::class, 'update'])->name('update');
+        Route::patch('/edit', [ProfileController::class, 'update'])->middleware('throttle:10,1')->name('update');
         Route::delete('/edit', [ProfileController::class, 'destroy'])->name('destroy');
 
-        Route::post('/edit/settings', [ProfileController::class, 'updateSettings'])->name('settings.update');
+        Route::post('/edit/settings', [ProfileController::class, 'updateSettings'])->middleware('throttle:20,1')->name('settings.update');
         Route::post('/edit/send-verify-code', [ProfileController::class, 'sendVerifyCode'])->middleware('throttle:5,1')->name('resend.verify.code');
-        Route::post('/edit/reset-secondary-password', [ProfileController::class, 'secondaryPasswordReset'])->name('reset.secondary.password');
+        Route::post('/edit/reset-secondary-password', [ProfileController::class, 'secondaryPasswordReset'])->middleware('throttle:10,1')->name('reset.secondary.password');
 
         Route::get('/donate', [DonateController::class, 'index'])->name('donate');
         Route::get('/donate/history', [DonateController::class, 'history'])->name('donate.history');

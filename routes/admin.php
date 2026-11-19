@@ -13,25 +13,10 @@ use App\Http\Controllers\Admin\VoucherController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/admin/index', [DashboardController::class, 'index'])->name('admin');
+    Route::get('/admin', [DashboardController::class, 'index'])->name('admin');
     Route::get('/admin/worldmap', [DashboardController::class, 'worldmap'])->name('admin.worldmap');
 
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/logs/donate', [LogController::class, 'donate'])->name('logs.donate');
-        Route::get('/logs/referral', [LogController::class, 'referral'])->name('logs.referral');
-        Route::get('/logs/vote', [LogController::class, 'vote'])->name('logs.vote');
-        Route::get('/logs/smc', [LogController::class, 'smc'])->name('logs.smc');
-
-        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-        Route::get('/general', [SettingController::class, 'general'])->name('settings.general');
-        Route::get('/widgets', [SettingController::class, 'widgets'])->name('settings.widgets');
-        Route::get('/donate', [SettingController::class, 'donate'])->name('settings.donate');
-        Route::get('/ranking', [SettingController::class, 'ranking'])->name('settings.ranking');
-        Route::get('/webapps', [SettingController::class, 'webApps'])->name('settings.webapps');
-        Route::get('/item-lookup', [SettingController::class, 'itemLookup'])->name('settings.item-lookup');
-        Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
-        Route::post('/settings/clear-cache', [SettingController::class, 'clearCache'])->name('settings.clear-cache');
-
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}/view', [UserController::class, 'view'])->name('users.view');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -80,5 +65,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('ticket.show');
         Route::post('/tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('ticket.reply');
         Route::post('/tickets/{ticket}/close', [TicketController::class, 'close'])->name('ticket.close');
+
+        Route::get('/logs/donate', [LogController::class, 'donate'])->name('logs.donate');
+        Route::get('/logs/referral', [LogController::class, 'referral'])->name('logs.referral');
+        Route::get('/logs/vote', [LogController::class, 'vote'])->name('logs.vote');
+        Route::get('/logs/smc', [LogController::class, 'smc'])->name('logs.smc');
+
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::get('/settings/general', [SettingController::class, 'general'])->name('settings.general');
+        Route::get('/settings/widgets', [SettingController::class, 'widgets'])->name('settings.widgets');
+        Route::get('/settings/donate', [SettingController::class, 'donate'])->name('settings.donate');
+        Route::get('/settings/ranking', [SettingController::class, 'ranking'])->name('settings.ranking');
+        Route::get('/settings/webapps', [SettingController::class, 'webApps'])->name('settings.webapps');
+        Route::get('/settings/item-lookup', [SettingController::class, 'itemLookup'])->name('settings.item-lookup');
+        Route::post('/settings/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/clear-cache', [SettingController::class, 'clearCache'])->name('settings.clear-cache');
     });
 });

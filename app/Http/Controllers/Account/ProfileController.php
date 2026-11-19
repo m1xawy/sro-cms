@@ -143,7 +143,7 @@ class ProfileController extends Controller
         ]);
 
         $tbUser = $request->user()->tbUser;
-        if (! $tbUser || md5($request->password) !== $tbUser->password) {
+        if (! $tbUser || ! hash_equals((string) $tbUser->password, md5($request->password))) {
             return back()->with('passcode_error', 'Invalid password provided. Please try again.');
         }
 

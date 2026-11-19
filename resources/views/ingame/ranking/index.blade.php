@@ -6,7 +6,7 @@
 <meta name="Description" content="Silkroad Online dünyanın en çok oynanan ücretsiz MMORPG oyunlarının başında gelmektedir. Silkroad Online'da eski Çin, İslam ve Avrupa medeniyetlerinin derinliklerine gidecek ve PvP, zindan sistemleri, sonsuz kale savaşları ile en iyi kahramanlardan biri olmak için çarpışacaksınız!" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>{{ config('app.name') }} - Official Ranking</title>
-<link href="{{ asset('in-game/ranking/images/favicon.png') }}" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+<link href="{{ asset('ingame/ranking/images/favicon.png') }}" rel="shortcut icon" type="image/vnd.microsoft.icon" />
 <style>
 	body,html {
 		font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
@@ -15,12 +15,12 @@
 		padding: 0;
 		overflow: hidden;
 		background-color:#FF0000;
-		background: url('{{ asset('in-game/ranking/images/bg.png') }}') 0 0 repeat;
+		background: url('{{ asset('ingame/ranking/images/bg.png') }}') 0 0 repeat;
 	}
 	#rankmain {
 		width: 800px;
 		height: 569px;
-		background: url('{{ asset('in-game/ranking/images/rankbg.png') }}') 0 0 no-repeat;
+		background: url('{{ asset('ingame/ranking/images/rankbg.png') }}') 0 0 no-repeat;
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -115,7 +115,7 @@
 		font-size: 12px;
 		cursor: pointer;
 		margin: 15px auto 0 auto;
-		background: url('{{ asset('in-game/ranking/images/button_webpage.png') }}') 0 0 no-repeat;
+		background: url('{{ asset('ingame/ranking/images/button_webpage.png') }}') 0 0 no-repeat;
 	}
 	#button_website:hover {
 		color: #d7c791;
@@ -124,7 +124,7 @@
 	.menu_label {
 		width: 800px;
 		height: 44px;
-		background: url('{{ asset('in-game/ranking/images/menubg.png') }}') 0 0 no-repeat;
+		background: url('{{ asset('ingame/ranking/images/menubg.png') }}') 0 0 no-repeat;
 		margin: 5px auto 0 auto;
 		color: #e8cf9a;
 		font-weight: bold;
@@ -186,10 +186,10 @@
 		display: block;
 		width: 148px;
 		height: 32px;
-		background: url('{{ asset('in-game/ranking/images/button_nonselected_v2.png') }}') 0 0 no-repeat;
+		background: url('{{ asset('ingame/ranking/images/button_nonselected_v2.png') }}') 0 0 no-repeat;
 	}
 	#rankmenu2_container ul li.selected {
-		background: url('{{ asset('in-game/ranking/images/button_selected_v2.png') }}') 0 0 no-repeat;
+		background: url('{{ asset('ingame/ranking/images/button_selected_v2.png') }}') 0 0 no-repeat;
 	}
 	#rankmenu2_container ul li.selected a {
 		color: #c2e1a4;
@@ -219,7 +219,7 @@
 		width: 148px;
 		padding: 0;
 		margin: 0;
-		background: url('{{ asset('in-game/ranking/images/leftmenu_bg.png') }}') 0 0 no-repeat;
+		background: url('{{ asset('ingame/ranking/images/leftmenu_bg.png') }}') 0 0 no-repeat;
 	}
 	.table_cover .td_rank {
 		height: 441px;
@@ -251,18 +251,18 @@ function blankurl(val)
 	<table class="table_cover">
 		<tr>
 			<td class="td_left_menu"><div id="rankmenu2_container">
-                <ul>
+                <ul id="rank-menu">
                     @if(empty($ranking))
                         <li class="selected"><a href="#">Ranking</a></li>
                     @else
                         @foreach($ranking as $key => $item)
-                            <li class="{{ $loop->first ? 'selected' : '' }}" data-target="{{ $key }}"><a href="#">{{ $item['name'] }}</a></li>
+                            <li class="{{ $loop->first ? 'selected' : '' }}" onclick="return showRanking(this, {{ $loop->index }});"><a href="#" onclick="return false;">{{ $item['name'] }}</a></li>
                         @endforeach
                     @endif
                 </ul>
             </div>
             </td>
-			<td class="td_rank"> <!-- rank -->
+			<td class="td_rank" id="rank-panels"> <!-- rank -->
                 @forelse($ranking as $key => $item)
                     @php
                         $rows = $data[$key] ?? collect();
@@ -270,7 +270,7 @@ function blankurl(val)
                         $cols = $first ? (array) $first : [];
                         $cols = array_values(array_filter(array_keys($cols), fn ($col) => ! in_array($col, $internalCols)));
                     @endphp
-                    <div class="rank-panel" data-panel="{{ $key }}" style="{{ $loop->first ? '' : 'display:none;' }}">
+                    <div class="rank-panel" style="{{ $loop->first ? '' : 'display:none;' }}">
                         <table class="table_rank" cellpadding="0" cellspacing="0">
                             <tr>
                                 <th class="th1">&nbsp;</th>
@@ -286,13 +286,13 @@ function blankurl(val)
                                     <tr onMouseOver='this.style.background="#2e261e"' onMouseOut='this.style.background="none"'>
                                         <td class="td1">
                                             @if($ri < 3 && isset($topImage[$ri + 1]))
-                                                <img src="{{ asset('in-game/ranking/' . $topImage[$ri + 1]) }}" style="vertical-align:text-top" />
+                                                <img src="{{ asset('ingame/ranking/' . $topImage[$ri + 1]) }}" style="vertical-align:text-top" />
                                             @endif
                                         </td>
                                         <td class="td2">{{ $ri + 1 }}</td>
                                         <td class="td3">
                                             @if(isset($row->RefObjID))
-                                                <img src="{{ asset('in-game/ranking/images/' . ($row->RefObjID > 2000 ? 'european' : 'chinese') . '.png') }}" style="vertical-align:text-top" />
+                                                <img src="{{ asset('ingame/ranking/images/' . ($row->RefObjID > 2000 ? 'european' : 'chinese') . '.png') }}" style="vertical-align:text-top" />
                                             @endif
                                         </td>
                                         @foreach($cols as $ci => $col)
@@ -300,7 +300,7 @@ function blankurl(val)
                                                 {{ $row->$col }}
                                             </td>
                                         @endforeach
-                                        <td class="td6"><center><img style="width: 16px; height: 16px;" src="{{ asset('in-game/ranking/images/nochange.png') }}" title="Değişiklik yok"></center></td>
+                                        <td class="td6"><center><img style="width: 16px; height: 16px;" src="{{ asset('ingame/ranking/images/nochange.png') }}" title="Değişiklik yok"></center></td>
                                     </tr>
                                 @endforeach
                             @else
@@ -313,7 +313,7 @@ function blankurl(val)
                         </table>
                     </div>
                 @empty
-                    <div class="rank-panel" data-panel="empty">
+                    <div class="rank-panel">
                         <table class="table_rank" cellpadding="0" cellspacing="0">
                             <tr><td colspan="4" style="text-align:center;">No ranking configured.</td></tr>
                         </table>
@@ -325,25 +325,40 @@ function blankurl(val)
 <div id="button_website" onclick="blankurl('{{ config('app.url') }}')">Official Website</div>
 </div>
 <script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function () {
-    var title = document.getElementById("rankTitle");
-    document.querySelectorAll("#rankmenu2_container ul li[data-target]").forEach(function (li) {
-        li.addEventListener("click", function () {
-            document.querySelectorAll("#rankmenu2_container ul li").forEach(function (el) {
-                el.classList.remove("selected");
-            });
-            li.classList.add("selected");
+// IE7-safe tab switching (no addEventListener / querySelector / classList).
+function showRanking(li, index) {
+    var menu = document.getElementById('rank-menu');
+    if (menu) {
+        var items = menu.getElementsByTagName('li');
+        for (var i = 0; i < items.length; i++) {
+            items[i].className = '';
+        }
+    }
+    li.className = 'selected';
 
-            var name = li.querySelector("a") ? li.querySelector("a").textContent : "";
-            if (title) title.textContent = name;
+    var title = document.getElementById('rankTitle');
+    var link = li.getElementsByTagName('a')[0];
+    if (title && link) {
+        title.innerHTML = link.innerHTML;
+    }
 
-            var target = li.dataset.target;
-            document.querySelectorAll(".rank-panel").forEach(function (panel) {
-                panel.style.display = panel.dataset.panel === target ? '' : 'none';
-            });
-        });
-    });
-});
+    var container = document.getElementById('rank-panels');
+    if (!container) {
+        return false;
+    }
+
+    var panels = container.getElementsByTagName('div');
+    var panelIndex = 0;
+    for (var j = 0; j < panels.length; j++) {
+        if (panels[j].className.indexOf('rank-panel') === -1) {
+            continue;
+        }
+        panels[j].style.display = (panelIndex === index) ? '' : 'none';
+        panelIndex++;
+    }
+
+    return false;
+}
 </script>
 
 </body>

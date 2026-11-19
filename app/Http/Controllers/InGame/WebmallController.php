@@ -9,6 +9,6 @@ class WebmallController extends Controller
 {
     public function webmall(Request $request)
     {
-        return view('in-game.webmall.index');
+        return view('ingame.webmall.index');
     }
 }

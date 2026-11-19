@@ -34,6 +34,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('password.store');
 
     Route::get('/login/verify', [AuthenticatedSessionController::class, 'show'])->name('login.show');
@@ -58,12 +59,12 @@ Route::middleware('auth')->group(function () {
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
-    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+    Route::put('password', [PasswordController::class, 'update'])->middleware('throttle:10,1')->name('password.update');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 
     Route::get('/phone/verify', [PhoneVerifyController::class, 'show'])->name('phone.verify');
-    Route::post('/phone/verify', [PhoneVerifyController::class, 'confirm'])->name('phone.verify.confirm');
+    Route::post('/phone/verify', [PhoneVerifyController::class, 'confirm'])->middleware('throttle:10,1')->name('phone.verify.confirm');
     Route::post('/phone/verify/resend', [PhoneVerifyController::class, 'resend'])->middleware('throttle:5,1')->name('phone.verify.resend');
 });

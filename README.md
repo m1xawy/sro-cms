@@ -1,7 +1,7 @@
 
-## About SRO CMS v2
+## About SRO CMS v3
 
-SRO CMS v2 is A free and open-source project for the MMORPG Silkroad Online (iSRO & vSRO) Server files
+SRO CMS v3 is A free and open-source project for the MMORPG Silkroad Online (iSRO & vSRO) Server files
 
 Whats new?-:
 - Supporting iSRO and vSRO files.

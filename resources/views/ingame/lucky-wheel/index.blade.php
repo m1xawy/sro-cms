@@ -2,40 +2,38 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" >
 <head>
-	@php $ver = filemtime(public_path('in-game/battle-pass/script.js')); @endphp
+	@php $ver = filemtime(public_path('ingame/lucky-wheel/script.js')); @endphp
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="Keywords" content="silkroad, silkroadonline, joymax, onlinesilkroad, silkroad-online" />
 	<META http-equiv='Page-Enter' content='blendTrans(Duration=0.2)'>
 	<META http-equiv='Page-Exit' content='blendTrans(Duration=0.2)'>
-	<link rel="stylesheet" type="text/css" media="all" href="{{ asset('in-game/battle-pass/itemmall_game.css') }}?v={{ $ver }}" />
-	<link rel="stylesheet" type="text/css" media="all" href="{{ asset('in-game/battle-pass/style.css') }}?v={{ $ver }}" />
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/library/config/jquery-1.4.2.min.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/jquery.jcarousel.min.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/jquery.pngFix.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/jquery.sexy-combo.min.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/jquery.cluetip.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/ingame_shell.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/_common.js') }}"></script>
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/jquery.scroll.js') }}"></script>
+	<link rel="stylesheet" type="text/css" media="all" href="{{ asset('ingame/lucky-wheel/itemmall_game.css') }}?v={{ $ver }}" />
+	<link rel="stylesheet" type="text/css" media="all" href="{{ asset('ingame/lucky-wheel/style.css') }}?v={{ $ver }}" />
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/library/config/jquery-1.4.2.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/jquery.jcarousel.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/jquery.pngFix.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/jquery.sexy-combo.min.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/jquery.cluetip.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/ingame_shell.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/_common.js') }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/jquery.scroll.js') }}"></script>
 
 	<!-- Battle Pass API Client -->
-	<script type="text/javascript" src="{{ asset('in-game/battle-pass/script.js') }}?v={{ $ver }}"></script>
+	<script type="text/javascript" src="{{ asset('ingame/lucky-wheel/script.js') }}?v={{ $ver }}"></script>
 
-	<title>Silkroad Online - Battle Pass</title>
-	<base target="_blank">
+	<title>Silkroad Online - Lucky Wheel</title>
 	<base target="_blank">
 </head>
 <body class="mig " ondragstart="return false" onselectstart="return false">
 <div id="wrap" class="mall-list">
 	<div id="header">
-		<h1>Battle Pass</h1>
+		<h1>Lucky Wheel</h1>
 		<ul id="gnb"></ul>
 	</div>
 
 	<div id="developer">
 		<div id="progress">
-			<div id="progress-bar" class="progress-bar" style="width: 0%"></div>
-			<span id="progress-text" class="progress-text">0/0</span>
+			<p style="text-align: center">Item Prizes go to your item inventory - Silk Prizes straight to your account</p>
 		</div>
 
 		<div id="lead"></div>

@@ -180,4 +180,33 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Lucky Wheel
+    |--------------------------------------------------------------------------
+    */
+    'luckywheel' => [
+        // Master toggle — when disabled all battle pass routes are blocked
+        'enabled' => false,
+        'spin-cost' => 20,
+        'max_per_buy' => 10,
+        // Silk type used to buy/upgrade: null = auto (vSRO: 0 = silk_own, iSRO: 3 = PremiumSilk)
+        // iSRO options: 3 = PremiumSilk, 1 = Silk | vSRO options: 0 = silk_own, 1 = silk_gift, 2 = silk_point
+        'silk_type' => null,
+
+        // Lucky Wheel Prizes items
+        'prizes' => [
+            ['id' => 1, 'lucky' => 10, 'item_id' => 4, 'qty' => 10],
+            ['id' => 2, 'lucky' => 10, 'item_id' => 5, 'qty' => 10],
+            ['id' => 3, 'lucky' => 25, 'item_id' => 6, 'qty' => 10],
+            ['id' => 4, 'lucky' => 25, 'item_id' => 7, 'qty' => 10],
+            ['id' => 5, 'lucky' => 50, 'item_id' => 8, 'qty' => 10],
+            ['id' => 6, 'lucky' => 50, 'item_id' => 9, 'qty' => 10],
+            ['id' => 7, 'lucky' => 50, 'item_id' => 71, 'qty' => 1],
+            ['id' => 8, 'lucky' => 75, 'item_id' => 12928, 'qty' => 1],
+            ['id' => 9, 'lucky' => 75, 'item_id' => 34252, 'qty' => 1],
+            ['id' => 10, 'lucky' => 100, 'item_id' => 25187, 'qty' => 1],
+        ],
+    ],
+
 ];

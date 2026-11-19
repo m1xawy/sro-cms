@@ -7,17 +7,54 @@
 // CONFIGURATION
 // ============================================================
 var BP_CONFIG = {
-    API_BASE: '/game/battlepass',
+    API_BASE: '/in-game/battlepass',
     ITEM_ICON_BASE: '/images/sro/',
     DEFAULT_ICON: '/images/sro/icon_default.png',
-    SILK_ICON: '/in-game/battle-pass/images/points.png',
-    PREMIUM_SILK_ICON: '/in-game/battle-pass/images/silk.png',
+    SILK_ICON: '/ingame/battle-pass/images/points.png',
+    PREMIUM_SILK_ICON: '/ingame/battle-pass/images/silk.png',
     REFRESH_INTERVAL: 30000,
     PREMIUM_ENABLED: false,  // Set to false to disable premium pass features
     PREMIUM_PRICE: 500,      // Overridden by server config on first load
     POINTS_PER_PURCHASE: 1,  // Overridden by server config on first load
     SILK_PER_POINT: 50       // Overridden by server config on first load
 };
+
+// ============================================================
+// IE7 HELPERS
+// ============================================================
+// Escape values before inserting them into innerHTML. Item, guild and
+// character names originate from the game database, so never trust them as
+// markup.
+function bpEscapeHtml(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// IE7-safe getElementsByClassName (IE7 only has getElementsByTagName).
+function bpGetElementsByClassName(className, rootNode) {
+    var root = rootNode || document;
+    var results = [];
+    var all = root.getElementsByTagName('*');
+    var i, el, classes;
+
+    for (i = 0; i < all.length; i++) {
+        el = all[i];
+        classes = ' ' + (el.className || '') + ' ';
+        if (classes.indexOf(' ' + className + ' ') !== -1) {
+            results.push(el);
+        }
+    }
+
+    return results;
+}
 
 // ============================================================
 // URL PARAMETER PARSER
@@ -244,8 +281,8 @@ var BattlePassUI = {
         topTierContainer.innerHTML =
             '<li class="' + liClass + '" dir="ltr">' +
             '<div class="intro">' +
-            '<a class="pic"><img src="' + iconUrl + '" alt="' + item.name + '" onerror="this.src=\'' + BP_CONFIG.DEFAULT_ICON + '\'" /></a>' +
-            '<span class="name">' + item.name + '</span>' +
+            '<a class="pic"><img src="' + bpEscapeHtml(iconUrl) + '" alt="' + bpEscapeHtml(item.name) + '" onerror="this.src=\'' + BP_CONFIG.DEFAULT_ICON + '\'" /></a>' +
+            '<span class="name">' + bpEscapeHtml(item.name) + '</span>' +
             '<div class="price">' +
             '<span class="type"><img src="' + BP_CONFIG.SILK_ICON + '" alt="Silk" /></span>' +
             '<strong class="val">Lv. ' + stats.maxLevel + '</strong>' +
@@ -272,7 +309,7 @@ var BattlePassUI = {
         if (!purchaseContainer) return;
 
         var passType = record.isPremium ? 'Premium' : 'Free';
-        var passBadge = record.isPremium ? '/in-game/battle-pass/images/badge-premium.png' : '/in-game/battle-pass/images/badge-free.png';
+        var passBadge = record.isPremium ? '/ingame/battle-pass/images/badge-premium.png' : '/ingame/battle-pass/images/badge-free.png';
         var premClass = record.isPremium ? 'prem' : '';
 
         var premiumButtonHTML = '';
@@ -305,7 +342,7 @@ var BattlePassUI = {
             '<li class="' + premClass + '" dir="ltr">' +
             '<div class="intro purchase-pass-details">' +
             '<img src="' + passBadge + '" alt="" />' +
-            '<span class="name" style="font-weight: bold; margin-top: 10px">' + data.character.charname + '</span>' +
+            '<span class="name" style="font-weight: bold; margin-top: 10px">' + bpEscapeHtml(data.character.charname) + '</span>' +
             '<span class="name">' + passType + ' Battle Pass</span>' +
             '<span class="name" style="color: #ffcc00;">Points: ' + stats.currentPoints + '</span>' +
             '</div>' +
@@ -486,8 +523,8 @@ var BattlePassUI = {
             html +=
                 '<li class="' + liClass + '">' +
                 '<div class="intro">' +
-                '<a rel="#item-' + tier.id + '" class="pic"><img src="' + iconUrl + '" alt="' + item.name + '" onerror="this.src=\'' + BP_CONFIG.DEFAULT_ICON + '\'" /></a>' +
-                '<span class="name">' + item.name + '</span>' +
+                '<a rel="#item-' + tier.id + '" class="pic"><img src="' + bpEscapeHtml(iconUrl) + '" alt="' + bpEscapeHtml(item.name) + '" onerror="this.src=\'' + BP_CONFIG.DEFAULT_ICON + '\'" /></a>' +
+                '<span class="name">' + bpEscapeHtml(item.name) + '</span>' +
                 '<span class="tag ' + bestClass + '">Lv ' + tier.level + '</span>' +
                 '</div>' +
                 '<div class="price">' +
@@ -645,7 +682,7 @@ var BattlePassUI = {
         }
 
         // Hide/Show purchase-pass-details (badge, pass type info)
-        var purchaseDetails = document.getElementsByClassName('purchase-pass-details');
+        var purchaseDetails = bpGetElementsByClassName('purchase-pass-details');
         for (var j = 0; j < purchaseDetails.length; j++) {
             purchaseDetails[j].style.display = isEnabled ? '' : 'none';
         }
@@ -676,8 +713,8 @@ var BattlePassUI = {
 
         if (!modal || !titleEl || !contentEl) return;
 
-        titleEl.innerHTML = title || 'Notice';
-        contentEl.innerHTML = message || '';
+        titleEl.innerHTML = bpEscapeHtml(title || 'Notice');
+        contentEl.innerHTML = bpEscapeHtml(message || '');
 
         if (okBtn) okBtn.style.display = 'none';
         if (closeBtn) closeBtn.innerHTML = 'OK';

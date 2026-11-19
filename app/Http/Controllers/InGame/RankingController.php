@@ -21,7 +21,7 @@ class RankingController extends Controller
             [$data[$key], $errors[$key]] = $this->loadRankingData($key, $item);
         }
 
-        return view('in-game.ranking.index', [
+        return view('ingame.ranking.index', [
             'ranking' => $ranking,
             'data' => $data,
             'errors' => $errors,

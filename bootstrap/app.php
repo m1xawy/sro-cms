@@ -4,7 +4,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\LocaleMiddleware;
 use App\Http\Middleware\NoCache;
 use App\Http\Middleware\SecurityHeaders;
-use App\Http\Middleware\TrustProxies;
+use App\Http\Middleware\SessionSecurity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,16 +26,24 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'nocache' => NoCache::class,
         ]);
+        $middleware->trustHosts(
+            at: static fn (): array => (array) config('trustedhosts.hosts', []),
+            subdomains: false,
+        );
+
         $middleware->web(append: [
             LocaleMiddleware::class,
-            TrustProxies::class,
         ]);
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(SessionSecurity::class);
         $middleware->validateCsrfTokens(except: [
-            '/callback/*',
-            '/webhook/*',
-            '/postback/*',
-            '/game/*',
+            'callback/*',
+            'webhook/*',
+            'postback/*',
+            // Legacy in-game pages (IE7) POST these three without a CSRF
+            'in-game/battlepass/claim',
+            'in-game/battlepass/purchase-premium',
+            'in-game/battlepass/purchase-points',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

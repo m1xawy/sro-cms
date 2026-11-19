@@ -37,7 +37,7 @@
 
                     <div class="alert alert-info">
                         <strong>{{ __('In-Game Ranking URL:') }}</strong>
-                        <code>{{ route('game.ranking') }}</code>
+                        <code>{{ route('in-game.ranking') }}</code>
                     </div>
 
                     <div class="mb-4">
@@ -95,7 +95,7 @@
 
                     <div class="alert alert-info">
                         <strong>{{ __('Battle Pass URL:') }}</strong>
-                        <code>{{ route('game.battlepass') }}</code>
+                        <code>{{ route('in-game.battlepass') }}</code>
                     </div>
 
                     <div class="mb-4">

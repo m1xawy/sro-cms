@@ -9,6 +9,6 @@ class FortressController extends Controller
 {
     public function fortress(Request $request)
     {
-        return view('in-game.fortress.index');
+        return view('ingame.fortress.index');
     }
 }

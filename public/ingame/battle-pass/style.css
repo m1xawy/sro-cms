@@ -239,7 +239,7 @@
 }
 
 /* modal */
-.modal { position:fixed; background: url(property/silkroad/silkroadonline_3/item_img/ingame_img/modal_bg.png) repeat-x left top; display:none; z-index:1; margin:0px; padding:0px; left:0; top:0; width:800px; height:569px; }
+.modal { position:absolute; position:fixed; background: url(property/silkroad/silkroadonline_3/item_img/ingame_img/modal_bg.png) repeat-x left top; display:none; z-index:1; margin:0px; padding:0px; left:0; top:0; width:800px; height:569px; }
 .modal .alert_window { margin:200px auto; width:400px; height:180px; overflow:hidden; background:url(property/silkroad/silkroadonline_3/item_img/ingame_img/modal_window_400x180_new.png) no-repeat;}
 .modal .alert_title { width:305px; max-height:26px; margin:8px auto; text-align:center; padding:0px; font-size:12px; color:#E8CF9A;; }
 .modal .alert_content { width:381px; height:116px; margin:0 auto; text-align:center; font-size:12px; color:white; }
@@ -248,5 +248,5 @@
 .modal .alert_button { width:85px; height:24px; margin-top:3px; padding-top:0px; background:url(property/silkroad/silkroadonline_3/item_img/ingame_img/modal_button_new.png) no-repeat center; color:#C7AD7B;;}
 
 /* item tooltip */
-#bp-tooltip { display:none; position:fixed; text-align:left; font-size:12px; width:300px; min-height:200px; background-color:rgba(28,30,52,.8); color:#fff; padding:6px; border:1px solid #808bba; border-radius:5px; box-shadow:none; z-index:999; overflow:auto; }
+#bp-tooltip { display:none; position:absolute; position:fixed; text-align:left; font-size:12px; width:300px; min-height:200px; background-color:#1c1e34; background-color:rgba(28,30,52,.8); color:#fff; padding:6px; border:1px solid #808bba; border-radius:5px; z-index:999; overflow:auto; }
 #bp-tooltip img { display:inline-block; }
