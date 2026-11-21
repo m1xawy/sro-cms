@@ -88,6 +88,8 @@ class SettingController extends Controller
      */
     public function itemLookup(Request $request): \Illuminate\Http\JsonResponse
     {
+        abort_unless(auth()->user()?->role?->is_admin, 403);
+
         $inventoryService = app(\App\Services\InventoryService::class);
 
         $rows = [];
@@ -229,8 +231,9 @@ class SettingController extends Controller
                 continue;
             }
 
-            // Scalar fields (General tab direct name= attributes) and other JSON blobs
-            $toSave[$key] = is_array($value) ? json_encode($value) : $value;
+            if (in_array($key, $this->scalarSettingKeys(), true)) {
+                $toSave[$key] = is_array($value) ? json_encode($value) : $value;
+            }
         }
 
         $toSave['donate'] = json_encode($donate);
@@ -334,6 +337,21 @@ class SettingController extends Controller
     | Helpers
     |--------------------------------------------------------------------------
     */
+
+    /**
+     * Whitelist of scalar setting keys the General tab actually submits.
+     * Unknown POST fields are dropped in update() rather than blindly stored.
+     */
+    private function scalarSettingKeys(): array
+    {
+        return [
+            'site_name', 'site_desc', 'site_url', 'site_favicon', 'site_logo',
+            'site_background', 'max_player', 'fake_player', 'max_level',
+            'dark_mode', 'default_locale', 'theme', 'timezone',
+            'account_verify', 'disable_register', 'register_confirm',
+            'duplicate_email', 'agree_terms',
+        ];
+    }
 
     /**
      * Merge scalar settings stored as individual DB rows (General tab plain name= fields).

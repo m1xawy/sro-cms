@@ -31,13 +31,22 @@
 
                             input.select();
                             input.setSelectionRange(0, 99999); // for mobile
-                            navigator.clipboard.writeText(input.value).then(() => {
-                                button.textContent = "Copied!";
 
-                                setTimeout(() => {
-                                    button.textContent = "Copy";
-                                }, 2000);
-                            });
+                            const done = () => {
+                                button.textContent = "Copied!";
+                                setTimeout(() => { button.textContent = "Copy"; }, 2000);
+                            };
+
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(input.value).then(done);
+                            } else {
+                                try {
+                                    document.execCommand("copy");
+                                    done();
+                                } catch (e) {
+                                    button.textContent = "Press Ctrl+C";
+                                }
+                            }
                         }
                     </script>
                 </div>
@@ -75,20 +84,20 @@
                                     <tr>
                                         <td>{{ $key + 1 }}</td>
                                         <td>{{ $row->invitedUser->username ?? 'Unknown' }}</td>
-                                        <td>{{ $row->invitedUser->created_at->format('Y-m-d H:i') ?? 'N/A' }}</td>
+                                        <td>{{ $row->invitedUser?->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</td>
                                         <td>{{ $row->points }}</td>
                                         <td>
                                             @if($row->ip == 'CHEATING')
                                                 <span class="text-danger">Cheating</span>
                                             @else
-                                                <span class="text-success">Success<span>
+                                                <span class="text-success">Success</span>
                                             @endif
                                         </td>
                                     </tr>
                                 @endforeach
                             @else
                                 <tr>
-                                    <td class="text-center" colspan="6">No invited users yet.</td>
+                                    <td class="text-center" colspan="5">No invited users yet.</td>
                                 </tr>
                             @endif
                             </tbody>
@@ -109,23 +118,35 @@
     </section>
 @endsection
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js" referrerpolicy="no-referrer"></script>
     <script>
-        (async () => {
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-            const fingerprint = result.visitorId;
-
-            const url = new URL(window.location.href);
-
-            if (!url.searchParams.has('fingerprint')) {
-                url.searchParams.set('fingerprint', fingerprint);
-                window.location.href = url.toString();
+        (function () {
+            if (typeof FingerprintJS === 'undefined') {
                 return;
             }
 
-            //url.searchParams.delete('fingerprint');
-            //window.history.replaceState({}, document.title, url.pathname + url.search);
+            var token = document.querySelector('meta[name="csrf-token"]');
+            if (!token) {
+                return;
+            }
+
+            FingerprintJS.load()
+                .then(function (fp) { return fp.get(); })
+                .then(function (result) {
+                    return fetch('{{ route('account.referral.fingerprint') }}', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token.getAttribute('content')
+                        },
+                        body: JSON.stringify({ fingerprint: result.visitorId })
+                    });
+                })
+                .catch(function () {
+                    // Fingerprinting is optional; ignore CDN/network failures.
+                });
         })();
     </script>
 @endpush

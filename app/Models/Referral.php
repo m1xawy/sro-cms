@@ -50,7 +50,7 @@ class Referral extends Model
 
     public static function createReferral(User $user, ?string $fingerprint = null, ?string $ip = null): self
     {
-        $invite = $user->getInvitesCreated()->first();
+        $invite = $user->invitesCreated()->orderBy('id')->first();
         if ($invite) {
             return $invite;
         }
@@ -59,7 +59,7 @@ class Referral extends Model
             $code = strtoupper(Str::random(8));
         } while (self::where('code', $code)->exists());
 
-        $invite =  $user->invitesCreated()->create([
+        $invite = $user->invitesCreated()->create([
             'code' => $code,
             'name' => $user->username,
             'jid' => $user->jid,
@@ -72,14 +72,27 @@ class Referral extends Model
         return $invite;
     }
 
-    public static function inviteReferral(User $user, string $inviteCode, string $fingerprint, string $ip): ?self
+    public static function inviteReferral(User $user, string $inviteCode, ?string $fingerprint, string $ip): ?self
     {
-        $inviter = self::where('code', $inviteCode)->first();
-        if (!$inviter) {
+        $inviteCode = Str::upper(trim($inviteCode));
+        if ($inviteCode === '' || strlen($inviteCode) > 32) {
             return null;
         }
 
-        $points = ($inviter->ip !== $ip && $inviter->fingerprint !== $fingerprint) ? config('global.referral.reward_points', 0) : 0;
+        $inviter = self::where('code', $inviteCode)->first();
+        if (! $inviter) {
+            return null;
+        }
+
+        if ((int) $inviter->jid === (int) $user->jid) {
+            return null;
+        }
+        if (self::where('invited_jid', $user->jid)->exists()) {
+            return null;
+        }
+
+        $sameOrigin = $inviter->ip !== '0.0.0.0' && $inviter->ip === $ip && $fingerprint !== null && $inviter->fingerprint === $fingerprint;
+        $points = $sameOrigin ? 0 : (int) config('global.referral.reward_points', 0);
 
         return self::create([
             'code' => $inviter->code,
@@ -87,7 +100,7 @@ class Referral extends Model
             'jid' => $inviter->jid,
             'invited_jid' => $user->jid,
             'points' => $points,
-            'ip' => $points === 0 ? 'CHEATING' : $ip,
+            'ip' => $points === 0 ? null : $ip,
             'fingerprint' => $fingerprint,
         ]);
     }

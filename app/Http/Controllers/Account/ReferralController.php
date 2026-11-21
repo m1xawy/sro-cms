@@ -18,13 +18,10 @@ class ReferralController extends Controller
         abort_if(! config('global.referral.enabled', false), 403);
         $user = $request->user();
 
-        $fingerprint = $request->query('fingerprint');
-
-        $invite = Referral::createReferral($user, $fingerprint);
-
-        if ($fingerprint && is_null($invite->fingerprint)) {
-            $invite->update(['fingerprint' => $fingerprint]);
-            Cache::forget("user_invites_created_{$user->jid}");
+        $invite = Referral::createReferral($user, null, $request->ip());
+        if (($invite->ip === null || $invite->ip === '0.0.0.0') && $request->ip()) {
+            $invite->update(['ip' => $request->ip()]);
+            $user->clearInvitesCache();
         }
 
         $usedInvites = $user->getInvitesCreated()->whereNotNull('invited_jid')->load('invitedUser');
@@ -40,6 +37,28 @@ class ReferralController extends Controller
         ]);
     }
 
+    public function storeFingerprint(Request $request)
+    {
+        if (! config('global.referral.enabled', false)) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $validated = $request->validate([
+            'fingerprint' => ['required', 'string', 'max:64'],
+        ]);
+
+        $user = $request->user();
+        $invite = Referral::createReferral($user, $validated['fingerprint'], $request->ip());
+
+        // Set once. A later visit must not overwrite the stored value.
+        if (is_null($invite->fingerprint)) {
+            $invite->update(['fingerprint' => $validated['fingerprint']]);
+            $user->clearInvitesCache();
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     public function redeem(Request $request)
     {
         if (! config('global.referral.enabled', false)) {
@@ -47,19 +66,20 @@ class ReferralController extends Controller
         }
 
         $user = $request->user();
-        $minimumRedeem = config('global.referral.minimum_redeem', 25);
+        $minimumRedeem = (int) config('global.referral.minimum_redeem', 25);
+        $rewardType = (int) config('global.referral.reward_type', 0);
 
         try {
-            $redeemed = Cache::lock("referral-redeem:{$user->jid}", 15)->block(5, function () use ($user, $minimumRedeem) {
-                return DB::transaction(function () use ($user, $minimumRedeem) {
-                    $invites = $user->invitesCreated()->whereNotNull('invited_jid')->get();
-                    $totalPoints = $invites->sum('points');
+            $redeemed = Cache::lock("referral-redeem:{$user->jid}", 15)->block(5, function () use ($user, $minimumRedeem, $rewardType) {
+                return DB::transaction(function () use ($user, $minimumRedeem, $rewardType) {
+                    $invites = $user->invitesCreated()->whereNotNull('invited_jid')->lockForUpdate()->get();
+                    $totalPoints = (int) $invites->sum('points');
 
                     if ($totalPoints < $minimumRedeem) {
                         throw new \RuntimeException("You need at least {$minimumRedeem} points to redeem.");
                     }
 
-                    TbUser::updateSilk($user->jid, config('global.referral.reward_type', 0), $totalPoints);
+                    $user->invitesCreated()->whereNotNull('invited_jid')->update(['points' => 0]);
 
                     Donate::log([
                         'method' => 'Voucher',
@@ -67,7 +87,7 @@ class ReferralController extends Controller
                         'jid' => $user->jid,
                     ]);
 
-                    $user->invitesCreated()->whereNotNull('invited_jid')->update(['points' => 0]);
+                    TbUser::updateSilk($user->jid, $rewardType, $totalPoints);
 
                     return $totalPoints;
                 });
@@ -77,6 +97,8 @@ class ReferralController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        $user->clearInvitesCache();
 
         return back()->with('success', "{$redeemed} Silk has been added to your account!");
     }

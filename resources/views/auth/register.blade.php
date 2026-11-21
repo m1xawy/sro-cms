@@ -154,27 +154,36 @@
             });
         </script>
     @endif
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-    <script>
-        FingerprintJS.load().then(fp => {
-            fp.get().then(result => {
-                const form = document.querySelector('form[action*="register"]');
-
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'fingerprint';
-                input.value = result.visitorId;
-                form.appendChild(input);
-
-                const invite = new URLSearchParams(window.location.search).get('invite');
-                if (invite) {
-                    const inviteInput = document.createElement('input');
-                    inviteInput.type = 'hidden';
-                    inviteInput.name = 'invite';
-                    inviteInput.value = invite;
-                    form.appendChild(inviteInput);
+    @if(config('global.referral.enabled', false))
+        <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js" referrerpolicy="no-referrer"></script>
+        <script>
+            (function () {
+                if (typeof FingerprintJS === 'undefined') {
+                    return;
                 }
-            });
-        });
-    </script>
+
+                var form = document.querySelector('form[action*="register"]');
+                if (!form) {
+                    return;
+                }
+
+                FingerprintJS.load()
+                    .then(function (fp) { return fp.get(); })
+                    .then(function (result) {
+                        if (form.querySelector('input[name="fingerprint"]')) {
+                            return;
+                        }
+
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'fingerprint';
+                        input.value = result.visitorId;
+                        form.appendChild(input);
+                    })
+                    .catch(function () {
+                        // Optional anti-abuse signal; registration still works.
+                    });
+            })();
+        </script>
+    @endif
 @endpush

@@ -47,18 +47,14 @@ class LoginRequest extends FormRequest
             if (User::where('username', $this->get('username'))->exists()) {
                 RateLimiter::hit($this->throttleKey());
 
-                throw ValidationException::withMessages([
-                    'username' => trans('auth.failed'),
-                ]);
+                throw ValidationException::withMessages(['username' => trans('auth.failed'),]);
             }
 
             $tbUser = TbUser::where('StrUserID', $this->get('username'))->where('password', md5($this->get('password')))->first();
             if (! $tbUser) {
                 RateLimiter::hit($this->throttleKey());
 
-                throw ValidationException::withMessages([
-                    'username' => trans('auth.failed'),
-                ]);
+                throw ValidationException::withMessages(['username' => trans('auth.failed'),]);
             }
 
             $jid = $tbUser->PortalJID ?? $tbUser->JID;
@@ -67,9 +63,7 @@ class LoginRequest extends FormRequest
             if (blank($jid)) {
                 RateLimiter::hit($this->throttleKey());
 
-                throw ValidationException::withMessages([
-                    'username' => trans('auth.failed'),
-                ]);
+                throw ValidationException::withMessages(['username' => trans('auth.failed'),]);
             }
 
             $user = User::firstOrCreate(
@@ -84,9 +78,7 @@ class LoginRequest extends FormRequest
             if (! $user->wasRecentlyCreated) {
                 RateLimiter::hit($this->throttleKey());
 
-                throw ValidationException::withMessages([
-                    'username' => trans('auth.failed'),
-                ]);
+                throw ValidationException::withMessages(['username' => trans('auth.failed'),]);
             }
 
             Auth::login($user, $this->boolean('remember'));

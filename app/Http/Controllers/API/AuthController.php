@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Referral;
 use App\Models\SRO\Account\TbUser;
+use App\Models\SRO\Portal\AphChangedSilk;
 use App\Models\SRO\Portal\AuhAgreedService;
 use App\Models\SRO\Portal\MuEmail;
 use App\Models\SRO\Portal\MuhAlteredInfo;
@@ -65,9 +66,7 @@ class AuthController extends Controller
 
             report($e);
 
-            return response()->json([
-                'message' => 'Registration failed',
-            ], 500);
+            return response()->json(['message' => 'Registration failed',], 500);
         }
     }
 
@@ -79,8 +78,8 @@ class AuthController extends Controller
             'password' => ['required', 'min:6', 'max:32', 'confirmed'],
             'g-recaptcha-response' => config('captcha.enabled', false) ? ['required', 'captcha'] : ['nullable'],
             'terms' => config('global.agree_terms', false) ? ['required', 'accepted'] : ['nullable'],
-            'invite' => ['nullable', 'string'],
-            'fingerprint' => ['nullable', 'string'],
+            'invite' => ['nullable', 'string', 'max:32'],
+            'fingerprint' => ['nullable', 'string', 'max:64'],
         ];
 
         if (config('global.server.version') === 'vSRO') {
@@ -116,11 +115,7 @@ class AuthController extends Controller
             AuhAgreedService::setAgreedService($portalUser->JID, $userBinIP);
             MuJoiningInfo::setJoiningInfo($portalUser->JID, $userBinIP);
             MuVIPInfo::setVIPInfo($portalUser->JID);
-
-            // type 1 = silk, type 3 = premium silk
-            // AphChangedSilk::setChangedSilk($portalUser->JID, 1, 0);
-            // AphChangedSilk::setChangedSilk($portalUser->JID, 3, 0);
-
+            AphChangedSilk::setChangedSilk($portalUser->JID, 3, 0);
             TbUser::setISROAccount($portalUser->JID, $request->username, $request->password, $request->email, $ip);
 
             return $portalUser->JID;
@@ -129,13 +124,18 @@ class AuthController extends Controller
 
     private function handleReferral(User $user, Request $request): void
     {
-        if (! config('global.referral.enabled', true)) {
+        if (! config('global.referral.enabled', false)) {
             return;
         }
 
-        if ($request->filled('invite') && $request->filled('fingerprint')) {
-            Referral::inviteReferral($user, $request->invite, $request->fingerprint, $request->ip());
+        if ($request->filled('invite')) {
+            Referral::inviteReferral($user, $request->invite, $request->input('fingerprint'), $request->ip());
         }
+    }
+
+    private function timingSafeDummyHash(): string
+    {
+        return cache()->remember('auth.dummy_hash', 86400, fn () => Hash::make('timing-safe-dummy'));
     }
 
     public function login(Request $request)
@@ -147,23 +147,15 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('username', $request->username)->first();
+        $tbUser = TbUser::where('StrUserID', $request->username)->first();
 
         if ($user) {
-            // A CMS account exists: only its own password may authenticate it.
             if (! Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'message' => 'Invalid credentials',
-                ], 401);
+                return response()->json(['message' => 'Invalid credentials',], 401);
             }
-        } else {
-            // Legacy migration path: create the CMS record only for game
-            // accounts that do not have one yet.
-            $tbUser = TbUser::where('StrUserID', $request->username)->where('password', md5($request->password))->first();
-
-            if (! $tbUser) {
-                return response()->json([
-                    'message' => 'Invalid credentials',
-                ], 401);
+        } elseif ($tbUser) {
+            if (! hash_equals((string) $tbUser->password, md5($request->password))) {
+                return response()->json(['message' => 'Invalid credentials',], 401);
             }
 
             $jid = $tbUser->JID;
@@ -179,10 +171,12 @@ class AuthController extends Controller
             );
 
             if (! $user->wasRecentlyCreated) {
-                return response()->json([
-                    'message' => 'Invalid credentials',
-                ], 401);
+                return response()->json(['message' => 'Invalid credentials',], 401);
             }
+        } else {
+            Hash::check($request->password, $this->timingSafeDummyHash());
+
+            return response()->json(['message' => 'Invalid credentials',], 401);
         }
 
         $result = $this->sendVerifyCode($user);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Referral;
 use App\Models\SRO\Account\TbUser;
+use App\Models\SRO\Portal\AphChangedSilk;
 use App\Models\SRO\Portal\AuhAgreedService;
 use App\Models\SRO\Portal\MuEmail;
 use App\Models\SRO\Portal\MuhAlteredInfo;
@@ -86,8 +87,8 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'min:6', 'max:32', 'confirmed'],
             'g-recaptcha-response' => config('captcha.enabled', false) ? ['required', 'captcha'] : ['nullable'],
             'terms' => config('global.agree_terms', false) ? ['required', 'accepted'] : ['nullable'],
-            'invite' => ['nullable', 'string'],
-            'fingerprint' => ['nullable', 'string'],
+            'invite' => ['nullable', 'string', 'max:32'],
+            'fingerprint' => ['nullable', 'string', 'max:64'],
         ];
 
         if (config('global.server.version') === 'vSRO') {
@@ -125,11 +126,7 @@ class RegisteredUserController extends Controller
             AuhAgreedService::setAgreedService($portalUser->JID, ip2long($ip));
             MuJoiningInfo::setJoiningInfo($portalUser->JID, ip2long($ip));
             MuVIPInfo::setVIPInfo($portalUser->JID);
-
-            // type 1 = silk, type 3 = premium silk
-            // AphChangedSilk::setChangedSilk($portalUser->JID, 1, 0);
-            // AphChangedSilk::setChangedSilk($portalUser->JID, 3, 0);
-
+            AphChangedSilk::setChangedSilk($portalUser->JID, 3, 0);
             TbUser::setISROAccount($portalUser->JID, $request->username, $request->password, $request->email, $ip);
 
             return $portalUser->JID;
@@ -166,16 +163,17 @@ class RegisteredUserController extends Controller
 
     private function handleReferral(User $user, Request $request): void
     {
-        if (! config('global.referral.enabled', true)) {
+        if (! config('global.referral.enabled', false)) {
             return;
         }
 
-        if ($request->filled('fingerprint')) {
-            Referral::createReferral($user, $request->input('fingerprint'), $request->ip());
-        }
+        parse_str((string) parse_url((string) $request->headers->get('referer'), PHP_URL_QUERY), $query);
+        $invite = $request->input('invite') ?? ($query['invite'] ?? null);
 
-        if ($request->filled('invite') && $request->filled('fingerprint')) {
-            Referral::inviteReferral($user, $request->input('invite'), $request->input('fingerprint'), $request->ip());
+        Referral::createReferral($user, $request->input('fingerprint'), $request->ip());
+
+        if (is_string($invite)) {
+            Referral::inviteReferral($user, $invite, $request->input('fingerprint'), $request->ip());
         }
     }
 }

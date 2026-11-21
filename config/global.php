@@ -24,7 +24,7 @@ return [
     'server' => [
         'version' => env('SRO_VERSION', 'iSRO'), // or 'vSRO'
         'guard' => 'isro', // or 'MaxiGuard', 'vPlus', 'Vanguard', 'None'
-        'saltKey' => 'eset5ag.nsy-g6ky5.mp',
+        'saltKey' => env('SRO_SALT_KEY', ''),
         // 'WebMallPass' => 'ISRO-R Development',
         // 'WebMallAddr' => "http://webmall.luxor-online.com/gateway.asp"
     ],

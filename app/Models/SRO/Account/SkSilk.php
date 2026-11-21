@@ -105,7 +105,7 @@ class SkSilk extends Model
             '2' => 'silk_point'
         ];
 
-        return (int) self::where('JID', $jid)->value($silkTypes[$type]);
+        return (int) self::where('JID', $jid)->lockForUpdate()->value($silkTypes[$type]);
     }
 
     public static function updateSkSilk($jid, $type, $amount)

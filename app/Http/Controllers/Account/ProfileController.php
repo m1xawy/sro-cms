@@ -142,12 +142,12 @@ class ProfileController extends Controller
             'password' => 'required|string',
         ]);
 
-        $tbUser = $request->user()->tbUser;
-        if (! $tbUser || ! hash_equals((string) $tbUser->password, md5($request->password))) {
+        $user = $request->user();
+        if (! $user->tbUser || ! hash_equals((string) $user->tbUser?->password, md5($request->password))) {
             return back()->with('passcode_error', 'Invalid password provided. Please try again.');
         }
 
-        if (SecondaryPassword::where('UserJID', $tbUser->JID)->delete()) {
+        if (SecondaryPassword::where('UserJID', $user->tbUser?->JID)->delete()) {
             return back()->with('passcode_success', 'Your secondary password has been reset successfully!');
         }
 
