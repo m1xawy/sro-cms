@@ -3,15 +3,32 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Error;
 use App\Models\Donate;
 use App\Models\Referral;
 use App\Models\SRO\Account\SmcLog;
-use App\Models\SRO\Shard\Char;
 use App\Models\Vote;
 use Illuminate\Http\Request;
 
 class LogController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = Error::query();
+
+        $search = $request->filled('search') ? $request->search : null;
+        $query->when($search, fn($q) => $q->where(function ($q2) use ($search) {
+            $q2->where('message', 'like', "%{$search}%")
+                ->orWhere('subject', 'like', "%{$search}%")
+                ->orWhere('jid', 'like', "%{$search}%");
+        })
+        );
+
+        $data = $query->latest('created_at')->paginate(20);
+
+        return view('admin.logs.error', compact('data'));
+    }
+
     public function donate(Request $request)
     {
         $query = Donate::query();
@@ -37,14 +54,14 @@ class LogController extends Controller
         return view('admin.logs.donate', compact('data'));
     }
 
-    public function referral()
+    public function referral(Request $request)
     {
         $data = Referral::getReferralLogs(20);
 
         return view('admin.logs.referral', compact('data'));
     }
 
-    public function vote()
+    public function vote(Request $request)
     {
         $data = Vote::whereNotNull('expire')->latest()->paginate(20);
 
@@ -55,13 +72,11 @@ class LogController extends Controller
     {
         $query = SmcLog::query();
 
-        $query->when($request->filled('search'), function ($q) use ($request) {
+        $query->when($request->filled('search'), fn($q) => $q->where(function ($q2) use ($request) {
             $search = $request->search;
-            $q->where(function ($q2) use ($search) {
-                $q2->where('szUserID', 'like', "%{$search}%")
-                    ->orWhere('szLog', 'like', "%{$search}%");
-            });
-        });
+            $q2->where('szUserID', 'like', "%{$search}%")
+                ->orWhere('szLog', 'like', "%{$search}%");
+        }));
 
         $data = $query->latest('dLogDate')->paginate(20);
 

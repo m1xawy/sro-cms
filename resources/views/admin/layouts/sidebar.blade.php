@@ -94,6 +94,12 @@
                     {{ __('SMC Logs') }}
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2 {{ request()->routeIs('admin.logs.error') ? 'active' : '' }}" href="{{ route('admin.logs.error') }}">
+                    <svg class="bi" aria-hidden="true"><use xlink:href="#file-earmark-text"></use></svg>
+                    {{ __('Error Logs') }}
+                </a>
+            </li>
         </ul>
 
         <hr class="my-3">

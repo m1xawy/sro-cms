@@ -19,7 +19,6 @@ class DonateController extends Controller
     public function show(string $method): mixed
     {
         $config = config("donate.{$method}");
-
         if (!$config || !$config['enabled']) {
             return back()->withErrors(['error' => 'Payment method not found or disabled.']);
         }
@@ -34,7 +33,6 @@ class DonateController extends Controller
     public function process(string $method, Request $request, DonateService $donateService): mixed
     {
         $config = config("donate.{$method}");
-
         if (!$config || !$config['enabled']) {
             return back()->withErrors(['error' => 'Payment method not found or disabled.']);
         }
@@ -50,7 +48,6 @@ class DonateController extends Controller
     public function callback(string $method, Request $request, DonateService $donateService): mixed
     {
         $config = config("donate.{$method}");
-
         if (!$config || !$config['enabled']) {
             return back()->withErrors(['error' => 'Payment method not found or disabled.']);
         }
@@ -66,7 +63,6 @@ class DonateController extends Controller
     public function webhook(string $method, Request $request, DonateService $donateService): mixed
     {
         $config = config("donate.{$method}");
-
         if (!$config || !$config['enabled']) {
             return response('Payment method not found or disabled.', 403);
         }

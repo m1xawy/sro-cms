@@ -70,6 +70,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/logs/referral', [LogController::class, 'referral'])->name('logs.referral');
         Route::get('/logs/vote', [LogController::class, 'vote'])->name('logs.vote');
         Route::get('/logs/smc', [LogController::class, 'smc'])->name('logs.smc');
+        Route::get('/logs/error', [LogController::class, 'index'])->name('logs.error');
 
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::get('/settings/general', [SettingController::class, 'general'])->name('settings.general');
